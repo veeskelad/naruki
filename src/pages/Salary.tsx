@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Download, HelpCircle, Lightbulb } from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { calcSalary, fmt, type CalcResult, type TaxMode } from '@/lib/salary/stub'
 import { cn } from '@/lib/utils'
 
 const MONTHS = [
@@ -30,20 +31,47 @@ const MONTHS = [
   'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь',
 ]
 
-// stub preview data
-const MONTHLY_PREVIEW = MONTHS.map(() => ({
-  advance: 80_000,
-  salary: 94_000,
-  take: 174_000,
-  tax: 26_000,
-}))
+function parseMoney(raw: string): number {
+  const digits = raw.replace(/\D+/g, '')
+  return digits ? parseInt(digits, 10) : 0
+}
 
 export function SalaryPage() {
-  const [employment, setEmployment] = useState('tk')
+  const [employment, setEmployment] = useState<TaxMode>('tk')
   const [grossMode, setGrossMode] = useState(true)
+  const [grossRaw, setGrossRaw] = useState('200 000')
   const [children, setChildren] = useState('0')
   const [useProgressive, setUseProgressive] = useState(true)
   const [useChildDeduction, setUseChildDeduction] = useState(true)
+  const [npdLegalShare, setNpdLegalShare] = useState('60')
+  const [usnContribs, setUsnContribs] = useState('55 500')
+  const [customRate, setCustomRate] = useState('13')
+
+  const grossMonthly = parseMoney(grossRaw)
+
+  const result: CalcResult = useMemo(
+    () =>
+      calcSalary({
+        mode: employment,
+        grossMonthly,
+        children: parseInt(children, 10) || 0,
+        useProgressive,
+        useChildDeduction,
+        npdLegalSharePct: parseMoney(npdLegalShare),
+        usnContributionsYear: parseMoney(usnContribs),
+        customRatePct: parseMoney(customRate),
+      }),
+    [
+      employment,
+      grossMonthly,
+      children,
+      useProgressive,
+      useChildDeduction,
+      npdLegalShare,
+      usnContribs,
+      customRate,
+    ],
+  )
 
   return (
     <PageShell>
@@ -53,25 +81,33 @@ export function SalaryPage() {
         <div className="mt-8 grid items-start gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <SalaryForm
             employment={employment}
-            onEmploymentChange={setEmployment}
+            onEmploymentChange={(v) => setEmployment(v as TaxMode)}
             grossMode={grossMode}
             onGrossModeChange={setGrossMode}
+            grossRaw={grossRaw}
+            onGrossRawChange={setGrossRaw}
             children={children}
             onChildrenChange={setChildren}
             useProgressive={useProgressive}
             onUseProgressiveChange={setUseProgressive}
             useChildDeduction={useChildDeduction}
             onUseChildDeductionChange={setUseChildDeduction}
+            npdLegalShare={npdLegalShare}
+            onNpdLegalShareChange={setNpdLegalShare}
+            usnContribs={usnContribs}
+            onUsnContribsChange={setUsnContribs}
+            customRate={customRate}
+            onCustomRateChange={setCustomRate}
           />
 
           <div className="flex flex-col gap-6">
-            <SummaryCards />
-            <AdviceCard />
+            <SummaryCards result={result} grossMonthly={grossMonthly} />
+            <AdviceCard result={result} grossMonthly={grossMonthly} />
           </div>
         </div>
 
         <div className="mt-8">
-          <CashflowSection />
+          <CashflowSection result={result} />
         </div>
       </div>
     </PageShell>
@@ -102,23 +138,39 @@ function SalaryForm({
   onEmploymentChange,
   grossMode,
   onGrossModeChange,
+  grossRaw,
+  onGrossRawChange,
   children,
   onChildrenChange,
   useProgressive,
   onUseProgressiveChange,
   useChildDeduction,
   onUseChildDeductionChange,
+  npdLegalShare,
+  onNpdLegalShareChange,
+  usnContribs,
+  onUsnContribsChange,
+  customRate,
+  onCustomRateChange,
 }: {
   employment: string
   onEmploymentChange: (v: string) => void
   grossMode: boolean
   onGrossModeChange: (v: boolean) => void
+  grossRaw: string
+  onGrossRawChange: (v: string) => void
   children: string
   onChildrenChange: (v: string) => void
   useProgressive: boolean
   onUseProgressiveChange: (v: boolean) => void
   useChildDeduction: boolean
   onUseChildDeductionChange: (v: boolean) => void
+  npdLegalShare: string
+  onNpdLegalShareChange: (v: string) => void
+  usnContribs: string
+  onUsnContribsChange: (v: string) => void
+  customRate: string
+  onCustomRateChange: (v: string) => void
 }) {
   return (
     <form className="flex flex-col gap-5 rounded-[24px] border border-border/60 bg-card p-6 md:p-7">
@@ -155,7 +207,8 @@ function SalaryForm({
             className="h-full border-none bg-transparent text-[15px] shadow-none focus-visible:ring-0"
             inputMode="numeric"
             placeholder="200 000"
-            defaultValue="200 000"
+            value={grossRaw}
+            onChange={(e) => onGrossRawChange(e.target.value)}
           />
           <div className="flex items-center gap-1 border-l border-border/60 bg-muted/50 px-3 text-sm text-muted-foreground">
             <span>₽</span>
@@ -242,7 +295,8 @@ function SalaryForm({
                 className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
                 inputMode="numeric"
                 placeholder="60"
-                defaultValue="60"
+                value={npdLegalShare}
+                onChange={(e) => onNpdLegalShareChange(e.target.value)}
               />
               <span className="text-sm text-muted-foreground">%</span>
             </div>
@@ -256,7 +310,8 @@ function SalaryForm({
                 className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
                 inputMode="numeric"
                 placeholder="55 500"
-                defaultValue="55 500"
+                value={usnContribs}
+                onChange={(e) => onUsnContribsChange(e.target.value)}
               />
               <span className="text-sm text-muted-foreground">₽</span>
             </div>
@@ -270,7 +325,8 @@ function SalaryForm({
                 className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
                 inputMode="numeric"
                 placeholder="13"
-                defaultValue="13"
+                value={customRate}
+                onChange={(e) => onCustomRateChange(e.target.value)}
               />
               <span className="text-sm text-muted-foreground">%</span>
             </div>
@@ -396,28 +452,38 @@ function CheckboxWithTooltip({
   )
 }
 
-function SummaryCards() {
+function SummaryCards({
+  result,
+  grossMonthly,
+}: {
+  result: CalcResult
+  grossMonthly: number
+}) {
+  const monthlyTax = grossMonthly > 0 ? Math.round(result.totals.tax / 12) : 0
+  const monthlyTake = grossMonthly > 0 ? result.avgMonthlyTake : 0
+  const rate = result.totals.effectiveRatePct
+
   return (
     <div className="grid grid-cols-2 gap-3">
       <SummaryCard
-        label="Доход до вычета"
-        value="200 000 ₽"
+        label="Доход до налогов"
+        value={`${fmt(grossMonthly)} ₽`}
         hint="в месяц"
       />
       <SummaryCard
-        label="Налоги (13%)"
-        value="26 000 ₽"
+        label={`Налоги (${rate}%)`}
+        value={`${fmt(monthlyTax)} ₽`}
         hint="в месяц"
       />
       <SummaryCard
-        label="Доход на руки"
-        value="174 000 ₽"
+        label="На руки"
+        value={`${fmt(monthlyTake)} ₽`}
         hint="в месяц"
         accent
       />
       <SummaryCard
         label="За год на руки"
-        value="2 088 000 ₽"
+        value={`${fmt(result.totals.take)} ₽`}
         hint="итого за 12 мес."
         accent
       />
@@ -458,21 +524,44 @@ function SummaryCard({
   )
 }
 
-function AdviceCard() {
+function AdviceCard({
+  result,
+  grossMonthly,
+}: {
+  result: CalcResult
+  grossMonthly: number
+}) {
+  const rate = result.totals.effectiveRatePct
+  if (grossMonthly <= 0) {
+    return (
+      <div className="flex items-start gap-3 rounded-[20px] border border-border/60 bg-muted/40 p-5">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-muted text-muted-foreground">
+          <Lightbulb className="size-4" />
+        </span>
+        <p className="text-[14px] leading-relaxed text-muted-foreground">
+          Укажите сумму дохода, чтобы увидеть расчёт.
+        </p>
+      </div>
+    )
+  }
   return (
     <div className="flex items-start gap-3 rounded-[20px] border border-primary/20 bg-primary/5 p-5">
       <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/15 text-primary">
         <Lightbulb className="size-4" />
       </span>
       <p className="text-[14px] leading-relaxed text-foreground/80">
-        Ваш средний доход на руки — <b className="font-semibold text-foreground">174&nbsp;000&nbsp;₽</b> в месяц.
-        Это на&nbsp;13% меньше дохода до&nbsp;налогообложения.
+        Ваш средний доход на руки —{' '}
+        <b className="font-semibold text-foreground">
+          {fmt(result.avgMonthlyTake)}&nbsp;₽
+        </b>{' '}
+        в месяц. Это на&nbsp;{rate}% меньше дохода до&nbsp;налогообложения.
       </p>
     </div>
   )
 }
 
-function CashflowSection() {
+function CashflowSection({ result }: { result: CalcResult }) {
+  const rate = result.totals.effectiveRatePct
   return (
     <div className="rounded-[24px] border border-border/60 bg-card p-5 md:p-6">
       <Tabs defaultValue="chart">
@@ -491,39 +580,39 @@ function CashflowSection() {
         </div>
 
         <TabsContent value="chart" className="mt-5">
-          <ChartStub />
+          <ChartStub result={result} />
           <p className="mt-4 text-[13px] text-muted-foreground">
-            Средний доход на руки — 174&nbsp;000&nbsp;₽ / мес · налоговая нагрузка 13%
+            Средний доход на руки — {fmt(result.avgMonthlyTake)}&nbsp;₽ / мес · налоговая нагрузка {rate}%
           </p>
         </TabsContent>
 
         <TabsContent value="table" className="mt-5">
-          <MonthlyTable />
+          <MonthlyTable result={result} />
         </TabsContent>
       </Tabs>
     </div>
   )
 }
 
-function ChartStub() {
-  const max = 180_000
+function ChartStub({ result }: { result: CalcResult }) {
+  const max = Math.max(1, ...result.monthly.map((m) => m.take))
   return (
     <div className="grid grid-cols-12 gap-2 md:gap-3">
-      {MONTHLY_PREVIEW.map((m, i) => {
-        const advH = (m.advance / max) * 100
-        const salH = (m.salary / max) * 100
+      {result.monthly.map((m, i) => {
+        const advH = m.take > 0 ? (m.advance / max) * 100 : 0
+        const salH = m.take > 0 ? (m.salary / max) * 100 : 0
         return (
           <div key={i} className="flex flex-col items-center gap-2">
             <div className="flex h-40 w-full flex-col-reverse overflow-hidden rounded-lg bg-muted/40">
               <div
                 className="w-full bg-primary"
                 style={{ height: `${advH}%` }}
-                title={`Аванс ${m.advance.toLocaleString('ru-RU')} ₽`}
+                title={`Аванс ${fmt(m.advance)} ₽`}
               />
               <div
                 className="w-full bg-primary/40"
                 style={{ height: `${salH}%` }}
-                title={`Зарплата ${m.salary.toLocaleString('ru-RU')} ₽`}
+                title={`Зарплата ${fmt(m.salary)} ₽`}
               />
             </div>
             <span className="text-[11px] text-muted-foreground">
@@ -536,8 +625,12 @@ function ChartStub() {
   )
 }
 
-function MonthlyTable() {
-  // Mobile cards + desktop table
+function MonthlyTable({ result }: { result: CalcResult }) {
+  const totalAdv = result.monthly.reduce((s, m) => s + m.advance, 0)
+  const totalSal = result.monthly.reduce((s, m) => s + m.salary, 0)
+  const totalTake = result.totals.take
+  const totalTax = result.totals.tax
+
   return (
     <>
       <div className="hidden overflow-hidden rounded-xl border border-border/60 md:block">
@@ -561,35 +654,36 @@ function MonthlyTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
-            {MONTHLY_PREVIEW.map((m, i) => {
-              const cumulative = (i + 1) * m.take
-              return (
-                <tr key={i} className="bg-white">
-                  <td className="px-4 py-3 font-medium">{MONTHS[i]}</td>
-                  <td className="px-4 py-3 text-right text-muted-foreground">
-                    {m.advance.toLocaleString('ru-RU')} ₽
-                  </td>
-                  <td className="px-4 py-3 text-right text-muted-foreground">
-                    {m.salary.toLocaleString('ru-RU')} ₽
-                  </td>
-                  <td className="px-4 py-3 text-right font-medium text-emerald-700">
-                    {m.take.toLocaleString('ru-RU')} ₽
-                  </td>
-                  <td className="px-4 py-3 text-right text-rose-600">
-                    {m.tax.toLocaleString('ru-RU')} ₽
-                  </td>
-                  <td className="px-4 py-3 text-right text-muted-foreground">
-                    {cumulative.toLocaleString('ru-RU')} ₽
-                  </td>
-                </tr>
-              )
-            })}
+            {result.monthly.map((m, i) => (
+              <tr key={i} className="bg-white">
+                <td className="px-4 py-3 font-medium">{MONTHS[i]}</td>
+                <td className="px-4 py-3 text-right text-muted-foreground">
+                  {fmt(m.advance)} ₽
+                </td>
+                <td className="px-4 py-3 text-right text-muted-foreground">
+                  {fmt(m.salary)} ₽
+                </td>
+                <td className="px-4 py-3 text-right font-medium text-emerald-700">
+                  {fmt(m.take)} ₽
+                </td>
+                <td className="px-4 py-3 text-right text-rose-600">
+                  {fmt(m.tax)} ₽
+                </td>
+                <td className="px-4 py-3 text-right text-muted-foreground">
+                  {fmt(m.cumulative)} ₽
+                </td>
+              </tr>
+            ))}
             <tr className="bg-muted/30 font-semibold">
               <td className="px-4 py-3">Итого</td>
-              <td className="px-4 py-3 text-right">960 000 ₽</td>
-              <td className="px-4 py-3 text-right">1 128 000 ₽</td>
-              <td className="px-4 py-3 text-right text-emerald-700">2 088 000 ₽</td>
-              <td className="px-4 py-3 text-right text-rose-600">312 000 ₽</td>
+              <td className="px-4 py-3 text-right">{fmt(totalAdv)} ₽</td>
+              <td className="px-4 py-3 text-right">{fmt(totalSal)} ₽</td>
+              <td className="px-4 py-3 text-right text-emerald-700">
+                {fmt(totalTake)} ₽
+              </td>
+              <td className="px-4 py-3 text-right text-rose-600">
+                {fmt(totalTax)} ₽
+              </td>
               <td className="px-4 py-3" />
             </tr>
           </tbody>
@@ -597,29 +691,23 @@ function MonthlyTable() {
       </div>
 
       <div className="grid gap-3 md:hidden">
-        {MONTHLY_PREVIEW.map((m, i) => (
+        {result.monthly.map((m, i) => (
           <div
             key={i}
             className="rounded-2xl border border-border/60 bg-white p-4"
           >
             <div className="text-[15px] font-medium">{MONTHS[i]}</div>
-            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
+            <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2 text-[13px] tabular-nums">
               <dt className="text-muted-foreground">Аванс</dt>
-              <dd className="text-right">
-                {m.advance.toLocaleString('ru-RU')} ₽
-              </dd>
+              <dd className="text-right">{fmt(m.advance)} ₽</dd>
               <dt className="text-muted-foreground">Зарплата</dt>
-              <dd className="text-right">
-                {m.salary.toLocaleString('ru-RU')} ₽
-              </dd>
+              <dd className="text-right">{fmt(m.salary)} ₽</dd>
               <dt className="text-muted-foreground">На руки</dt>
               <dd className="text-right font-medium text-emerald-700">
-                {m.take.toLocaleString('ru-RU')} ₽
+                {fmt(m.take)} ₽
               </dd>
               <dt className="text-muted-foreground">Налоги</dt>
-              <dd className="text-right text-rose-600">
-                {m.tax.toLocaleString('ru-RU')} ₽
-              </dd>
+              <dd className="text-right text-rose-600">{fmt(m.tax)} ₽</dd>
             </dl>
           </div>
         ))}
