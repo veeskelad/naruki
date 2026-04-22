@@ -1,7 +1,7 @@
 import { Link } from 'wouter'
-import { Calendar, Wallet } from 'lucide-react'
+import { Calendar, Wallet, Sparkles } from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
-import { PrivacyPill } from '@/components/layout/PrivacyPill'
+import { cn } from '@/lib/utils'
 
 export function HomePage() {
   return (
@@ -25,99 +25,126 @@ function Hero() {
             Производственный календарь&nbsp;РФ, расчёт выплат по&nbsp;ТК, ИП и&nbsp;НПД.
             Всё считается в&nbsp;браузере — мы&nbsp;ничего не&nbsp;сохраняем.
           </p>
-          <div className="mt-8">
-            <PrivacyPill />
-          </div>
         </div>
 
-        <HeroIllustration />
+        <HeroPreview />
       </div>
     </section>
   )
 }
 
-function HeroIllustration() {
+function HeroPreview() {
   return (
-    <div className="relative hidden h-full min-h-[260px] md:block">
-      <svg
-        viewBox="0 0 400 320"
-        className="mx-auto h-full w-full max-w-md"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-      >
-        <rect
-          x="40"
-          y="40"
-          width="280"
-          height="220"
-          rx="24"
-          className="fill-white"
-          stroke="none"
-        />
-        <rect
-          x="40"
-          y="40"
-          width="280"
-          height="220"
-          rx="24"
-          className="stroke-border"
-        />
+    <div className="relative hidden md:block">
+      <div className="relative">
+        <VacationPreviewCard />
+        <SalaryPreviewCard />
+      </div>
+    </div>
+  )
+}
 
-        <line x1="40" y1="84" x2="320" y2="84" className="stroke-border" />
-        <line x1="88" y1="40" x2="88" y2="84" className="stroke-border" />
-        <line x1="112" y1="40" x2="112" y2="84" className="stroke-border" />
+function VacationPreviewCard() {
+  // Мини-календарь недели: Пн–Вс, пятница-праздник, 4–5 отпуск, сб-вс выходные
+  const days: Array<{ d: number; kind: 'work' | 'vac' | 'holi' | 'wknd' }> = [
+    { d: 4, kind: 'vac' },
+    { d: 5, kind: 'vac' },
+    { d: 6, kind: 'vac' },
+    { d: 7, kind: 'vac' },
+    { d: 8, kind: 'vac' },
+    { d: 9, kind: 'holi' },
+    { d: 10, kind: 'wknd' },
+  ]
+  return (
+    <div className="rounded-[22px] border border-border/60 bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          Май 2026
+        </span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+          <Sparkles className="size-3" />
+          Лучший вариант
+        </span>
+      </div>
 
-        <g className="stroke-muted-foreground/50">
-          {Array.from({ length: 5 }).map((_, row) =>
-            Array.from({ length: 7 }).map((_, col) => {
-              const cx = 64 + col * 36
-              const cy = 108 + row * 28
-              return <circle key={`${row}-${col}`} cx={cx} cy={cy} r="3" />
-            }),
-          )}
-        </g>
+      <div className="mt-4 grid grid-cols-7 gap-1.5 text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map((d) => (
+          <span key={d}>{d}</span>
+        ))}
+      </div>
+      <div className="mt-1.5 grid grid-cols-7 gap-1.5">
+        {days.map((day) => (
+          <div
+            key={day.d}
+            className={cn(
+              'grid aspect-square place-items-center rounded-lg text-[13px] font-medium',
+              day.kind === 'work' && 'bg-white text-foreground border border-border/60',
+              day.kind === 'vac' && 'bg-primary/15 text-emerald-800 ring-1 ring-primary/30',
+              day.kind === 'holi' && 'bg-rose-50 text-rose-600 border border-rose-100',
+              day.kind === 'wknd' && 'bg-rose-50/50 text-rose-500',
+            )}
+          >
+            {day.d}
+          </div>
+        ))}
+      </div>
 
-        <g className="fill-primary stroke-primary">
-          {[2, 3, 4, 5, 6].map((col) => (
-            <circle key={`hl-${col}`} cx={64 + col * 36} cy={164} r="5" />
-          ))}
-        </g>
+      <div className="mt-4 flex items-center justify-between rounded-xl bg-primary/5 px-3 py-2.5">
+        <div>
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            5 дней отпуска
+          </div>
+          <div className="mt-0.5 text-[18px] font-semibold text-foreground">
+            9 дней отдыха
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Выгода
+          </div>
+          <div className="mt-0.5 text-[18px] font-semibold text-primary">
+            ×1.80
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
-        <circle cx="320" cy="230" r="46" className="fill-white stroke-border" />
-        <circle cx="320" cy="230" r="36" className="stroke-primary/60" />
-        <text
-          x="320"
-          y="240"
-          textAnchor="middle"
-          className="fill-primary"
-          stroke="none"
-          fontSize="28"
-          fontFamily="Inter, system-ui, sans-serif"
-          fontWeight="600"
-        >
-          ₽
-        </text>
-
-        <g className="stroke-primary/70">
-          <circle cx="90" cy="250" r="14" />
-          <path d="M90 230 L90 220" />
-          <path d="M76 250 L66 250" />
-          <path d="M104 250 L114 250" />
-          <path d="M80 240 L72 232" />
-          <path d="M100 240 L108 232" />
-        </g>
-      </svg>
+function SalaryPreviewCard() {
+  return (
+    <div className="absolute -bottom-12 -left-8 w-[72%] rounded-[20px] border border-border/60 bg-card p-4 shadow-[0_10px_25px_-15px_rgba(15,23,42,0.15)]">
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          ТК РФ · декабрь
+        </span>
+        <span className="text-[11px] text-muted-foreground">13%</span>
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <div>
+          <div className="text-[11px] text-muted-foreground">До налогов</div>
+          <div className="mt-1 text-[17px] font-semibold text-foreground line-through decoration-muted-foreground/50">
+            200 000 ₽
+          </div>
+        </div>
+        <div>
+          <div className="text-[11px] text-muted-foreground">На руки</div>
+          <div className="mt-1 text-[17px] font-semibold text-primary">
+            174 000 ₽
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-full bg-primary" style={{ width: '87%' }} />
+        <div className="h-full bg-rose-300" style={{ width: '13%' }} />
+      </div>
     </div>
   )
 }
 
 function FeatureCards() {
   return (
-    <section className="mx-auto grid max-w-6xl gap-5 px-6 pb-20 md:grid-cols-2 md:gap-6 md:pb-28">
+    <section className="mx-auto grid max-w-6xl gap-5 px-6 pb-20 md:grid-cols-2 md:gap-6 md:pb-28 md:pt-20">
       <FeatureCard
         href="/vacation"
         icon={<Calendar className="size-7" strokeWidth={1.6} />}

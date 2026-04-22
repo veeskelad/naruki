@@ -1,5 +1,13 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { Menu } from 'lucide-react'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 
 const NAV = [
@@ -9,7 +17,13 @@ const NAV = [
 ] as const
 
 export function SiteHeader() {
-  const [location] = useLocation()
+  const [location, navigate] = useLocation()
+  const [mobileOpen, setMobileOpen] = useState(false)
+
+  const go = (href: string) => {
+    setMobileOpen(false)
+    navigate(href)
+  }
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/80 backdrop-blur">
@@ -46,13 +60,50 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <button
-          type="button"
-          aria-label="Меню"
-          className="grid size-10 place-items-center rounded-xl border border-border/60 text-muted-foreground transition hover:text-foreground md:hidden"
-        >
-          <Menu className="size-5" />
-        </button>
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetTrigger asChild>
+            <button
+              type="button"
+              aria-label="Меню"
+              className="grid size-10 place-items-center rounded-xl border border-border/60 text-muted-foreground transition hover:text-foreground md:hidden"
+            >
+              <Menu className="size-5" />
+            </button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[84%] max-w-[320px] p-0">
+            <SheetHeader className="border-b border-border/60 px-6 py-5">
+              <SheetTitle className="flex items-center gap-3 text-left text-[17px]">
+                <span className="grid size-9 place-items-center rounded-[10px] bg-primary text-primary-foreground font-semibold">
+                  ₽
+                </span>
+                На&nbsp;руки
+              </SheetTitle>
+            </SheetHeader>
+            <nav className="flex flex-col p-3">
+              {NAV.map((item) => {
+                const active = location === item.href
+                return (
+                  <button
+                    key={item.href}
+                    type="button"
+                    onClick={() => go(item.href)}
+                    className={cn(
+                      'flex items-center justify-between rounded-xl px-4 py-3 text-left text-[16px] transition',
+                      active
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'text-foreground hover:bg-muted/60',
+                    )}
+                  >
+                    {item.label}
+                    <span aria-hidden className="text-muted-foreground">
+                      →
+                    </span>
+                  </button>
+                )
+              })}
+            </nav>
+          </SheetContent>
+        </Sheet>
       </div>
     </header>
   )
