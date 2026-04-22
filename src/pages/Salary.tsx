@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, Info, Lightbulb } from 'lucide-react'
+import { Download, HelpCircle, Lightbulb } from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/button'
 import {
@@ -18,6 +18,11 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/components/ui/tabs'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 const MONTHS = [
@@ -36,6 +41,9 @@ const MONTHLY_PREVIEW = MONTHS.map(() => ({
 export function SalaryPage() {
   const [employment, setEmployment] = useState('tk')
   const [grossMode, setGrossMode] = useState(true)
+  const [children, setChildren] = useState('0')
+  const [useProgressive, setUseProgressive] = useState(true)
+  const [useChildDeduction, setUseChildDeduction] = useState(true)
 
   return (
     <PageShell>
@@ -43,14 +51,18 @@ export function SalaryPage() {
         <SalaryHeader />
 
         <div className="mt-8 grid items-start gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="lg:min-h-[580px]">
-            <SalaryForm
-              employment={employment}
-              onEmploymentChange={setEmployment}
-              grossMode={grossMode}
-              onGrossModeChange={setGrossMode}
-            />
-          </div>
+          <SalaryForm
+            employment={employment}
+            onEmploymentChange={setEmployment}
+            grossMode={grossMode}
+            onGrossModeChange={setGrossMode}
+            children={children}
+            onChildrenChange={setChildren}
+            useProgressive={useProgressive}
+            onUseProgressiveChange={setUseProgressive}
+            useChildDeduction={useChildDeduction}
+            onUseChildDeductionChange={setUseChildDeduction}
+          />
 
           <div className="flex flex-col gap-6">
             <SummaryCards />
@@ -90,14 +102,27 @@ function SalaryForm({
   onEmploymentChange,
   grossMode,
   onGrossModeChange,
+  children,
+  onChildrenChange,
+  useProgressive,
+  onUseProgressiveChange,
+  useChildDeduction,
+  onUseChildDeductionChange,
 }: {
   employment: string
   onEmploymentChange: (v: string) => void
   grossMode: boolean
   onGrossModeChange: (v: boolean) => void
+  children: string
+  onChildrenChange: (v: string) => void
+  useProgressive: boolean
+  onUseProgressiveChange: (v: boolean) => void
+  useChildDeduction: boolean
+  onUseChildDeductionChange: (v: boolean) => void
 }) {
   return (
     <form className="flex flex-col gap-5 rounded-[24px] border border-border/60 bg-card p-6 md:p-7">
+      {/* Общие параметры */}
       <Field label="Тип занятости">
         <Select value={employment} onValueChange={onEmploymentChange}>
           <SelectTrigger className="h-11 rounded-xl">
@@ -147,81 +172,147 @@ function SalaryForm({
         </div>
       </Field>
 
+      {/* Слот режима — фиксированная высота, чтобы форма не прыгала */}
+      <div className="flex min-h-[240px] flex-col gap-4">
+        <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          {employment === 'tk' && 'Параметры ТК РФ'}
+          {employment === 'npd' && 'Параметры НПД'}
+          {employment === 'ip_usn' && 'Параметры ИП УСН 6%'}
+          {employment === 'custom' && 'Своя ставка'}
+        </div>
+
+        {employment === 'tk' && (
+          <>
+            <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+              <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                График выплат
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <Field label="Аванс">
+                  <Select defaultValue="15">
+                    <SelectTrigger className="h-11 rounded-xl bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                        <SelectItem key={d} value={String(d)}>
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field label="Зарплата">
+                  <Select defaultValue="30">
+                    <SelectTrigger className="h-11 rounded-xl bg-white">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                        <SelectItem key={d} value={String(d)}>
+                          {d}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+            </div>
+
+            <Field label="Дети">
+              <Select value={children} onValueChange={onChildrenChange}>
+                <SelectTrigger className="h-11 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Нет</SelectItem>
+                  <SelectItem value="1">1 ребёнок</SelectItem>
+                  <SelectItem value="2">2 детей</SelectItem>
+                  <SelectItem value="3">3 и больше</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+          </>
+        )}
+
+        {employment === 'npd' && (
+          <Field label="Доля дохода от юрлиц, %">
+            <div className="flex h-11 items-center gap-2 rounded-xl border border-border/60 bg-white px-3">
+              <Input
+                className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
+                inputMode="numeric"
+                placeholder="60"
+                defaultValue="60"
+              />
+              <span className="text-sm text-muted-foreground">%</span>
+            </div>
+          </Field>
+        )}
+
+        {employment === 'ip_usn' && (
+          <Field label="Уплаченные фикс-взносы за год">
+            <div className="flex h-11 items-center gap-2 rounded-xl border border-border/60 bg-white px-3">
+              <Input
+                className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
+                inputMode="numeric"
+                placeholder="55 500"
+                defaultValue="55 500"
+              />
+              <span className="text-sm text-muted-foreground">₽</span>
+            </div>
+          </Field>
+        )}
+
+        {employment === 'custom' && (
+          <Field label="Ставка налога">
+            <div className="flex h-11 items-center gap-2 rounded-xl border border-border/60 bg-white px-3">
+              <Input
+                className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
+                inputMode="numeric"
+                placeholder="13"
+                defaultValue="13"
+              />
+              <span className="text-sm text-muted-foreground">%</span>
+            </div>
+          </Field>
+        )}
+      </div>
+
+      {/* Уточнения — чекбоксы с tooltip (только для ТК РФ) */}
       {employment === 'tk' && (
-        <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+        <div className="flex flex-col gap-3 border-t border-border/60 pt-5">
           <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            График выплат
+            Уточнения
           </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <Field label="Аванс">
-              <Select defaultValue="15">
-                <SelectTrigger className="h-11 rounded-xl bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                    <SelectItem key={d} value={String(d)}>
-                      {d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field label="Зарплата">
-              <Select defaultValue="30">
-                <SelectTrigger className="h-11 rounded-xl bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
-                    <SelectItem key={d} value={String(d)}>
-                      {d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-          </div>
+          <CheckboxWithTooltip
+            id="progressive-ndfl"
+            label="Прогрессивный НДФЛ 2025+"
+            checked={useProgressive}
+            onCheckedChange={onUseProgressiveChange}
+            tooltip="С 2025 года ставка растёт с дохода 2,4 млн ₽ в год — до 22%. Снимите галку, чтобы считать по плоской 13%."
+          />
+          <CheckboxWithTooltip
+            id="child-deduction"
+            label="Учитывать вычеты на детей"
+            checked={useChildDeduction}
+            onCheckedChange={onUseChildDeductionChange}
+            disabled={children === '0'}
+            tooltip="Стандартный вычет из налоговой базы: 1 400 ₽ на первого и второго ребёнка, 3 000 ₽ — на третьего и далее. Действует пока доход с начала года ≤ 450 000 ₽."
+          />
         </div>
       )}
 
-      {employment === 'tk' && (
-        <Field label="Вычеты на детей">
-          <Select defaultValue="0">
-            <SelectTrigger className="h-11 rounded-xl">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="0">Нет</SelectItem>
-              <SelectItem value="1">1 ребёнок</SelectItem>
-              <SelectItem value="2">2 детей</SelectItem>
-              <SelectItem value="3">3 и больше</SelectItem>
-            </SelectContent>
-          </Select>
-        </Field>
-      )}
-
-      {employment === 'custom' && (
-        <Field label="Ставка налога">
-          <div className="flex h-11 items-center gap-2 rounded-xl border border-border/60 bg-white px-3">
-            <Input
-              className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
-              inputMode="numeric"
-              placeholder="13"
-              defaultValue="13"
-            />
-            <span className="text-sm text-muted-foreground">%</span>
+      {/* Placeholder checkbox block — keep layout stable when no refinements */}
+      {employment !== 'tk' && (
+        <div className="flex flex-col gap-3 border-t border-border/60 pt-5">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Уточнения
           </div>
-        </Field>
+          <p className="text-[13px] text-muted-foreground">
+            Для этого режима дополнительных уточнений нет.
+          </p>
+        </div>
       )}
-
-      <label className="flex items-start gap-3 text-[14px] text-foreground">
-        <Checkbox defaultChecked className="mt-0.5" />
-        <span className="flex items-center gap-1.5 text-muted-foreground">
-          Учитывать НДФЛ и стандартные вычеты
-          <Info className="size-3.5" />
-        </span>
-      </label>
 
       <Button type="button" className="mt-2 h-11 w-full rounded-xl md:w-auto md:self-start md:px-8">
         Рассчитать
@@ -248,6 +339,59 @@ function Field({
         {right}
       </div>
       {children}
+    </div>
+  )
+}
+
+function CheckboxWithTooltip({
+  id,
+  label,
+  checked,
+  onCheckedChange,
+  tooltip,
+  disabled = false,
+}: {
+  id: string
+  label: string
+  checked: boolean
+  onCheckedChange: (v: boolean) => void
+  tooltip: string
+  disabled?: boolean
+}) {
+  return (
+    <div
+      className={cn(
+        'flex items-start gap-3 text-[14px]',
+        disabled && 'opacity-50',
+      )}
+    >
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(v) => onCheckedChange(v === true)}
+        disabled={disabled}
+        className="mt-0.5"
+      />
+      <label
+        htmlFor={id}
+        className="flex select-none items-center gap-1.5 text-foreground"
+      >
+        {label}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label="Подробнее"
+              className="inline-flex text-muted-foreground transition hover:text-foreground"
+            >
+              <HelpCircle className="size-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[280px] text-[12px]">
+            {tooltip}
+          </TooltipContent>
+        </Tooltip>
+      </label>
     </div>
   )
 }
