@@ -148,50 +148,54 @@ function SalaryForm({
       </Field>
 
       {employment === 'tk' && (
-        <div className="grid grid-cols-2 gap-4">
-          <Field label="Аванс">
-            <Select defaultValue="15">
-              <SelectTrigger className="h-11 rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[5, 10, 15, 20, 25].map((d) => (
-                  <SelectItem key={d} value={String(d)}>
-                    {d} число
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label="Зарплата">
-            <Select defaultValue="30">
-              <SelectTrigger className="h-11 rounded-xl">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[25, 28, 30, 1, 5, 10].map((d) => (
-                  <SelectItem key={d} value={String(d)}>
-                    {d} число
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
+        <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            График выплат
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Field label="Аванс">
+              <Select defaultValue="15">
+                <SelectTrigger className="h-11 rounded-xl bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <SelectItem key={d} value={String(d)}>
+                      {d}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Зарплата">
+              <Select defaultValue="30">
+                <SelectTrigger className="h-11 rounded-xl bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                    <SelectItem key={d} value={String(d)}>
+                      {d}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
         </div>
       )}
 
       {employment === 'tk' && (
-        <Field label="Детей до 18">
+        <Field label="Вычеты на детей">
           <Select defaultValue="0">
             <SelectTrigger className="h-11 rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[0, 1, 2, 3].map((n) => (
-                <SelectItem key={n} value={String(n)}>
-                  {n === 3 ? '3 и больше' : n}
-                </SelectItem>
-              ))}
+              <SelectItem value="0">Нет</SelectItem>
+              <SelectItem value="1">1 ребёнок</SelectItem>
+              <SelectItem value="2">2 детей</SelectItem>
+              <SelectItem value="3">3 и больше</SelectItem>
             </SelectContent>
           </Select>
         </Field>
