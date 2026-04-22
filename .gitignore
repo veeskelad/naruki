@@ -1,0 +1,48 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# builds
+dist/
+dist-ssr/
+build/
+.output/
+*.local
+
+# env
+.env
+.env.*
+!.env.example
+
+# editor / OS
+.vscode/*
+!.vscode/settings.json.example
+.idea/
+.DS_Store
+*.swp
+*~
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# test / coverage
+coverage/
+.nyc_output/
+
+# cache
+.cache/
+.vite/
+.turbo/
+
+# internal documentation — never pushed to public repo
+docs/internal/
+
+# search engine verification files (keep locally, do not commit)
+public/yandex_*.html
+public/google*.html
