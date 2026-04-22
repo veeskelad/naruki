@@ -27,7 +27,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between px-6 md:h-[80px]">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 md:h-[80px] md:px-6">
         <Link href="/" className="flex items-center gap-3">
           <span className="grid size-9 place-items-center rounded-[10px] bg-primary text-primary-foreground font-semibold">
             ₽

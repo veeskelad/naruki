@@ -1,5 +1,5 @@
 import { Link } from 'wouter'
-import { Calendar, Wallet, Sparkles } from 'lucide-react'
+import { ArrowRight, Sparkles, SlidersHorizontal, BarChart3, Download } from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
 import { cn } from '@/lib/utils'
 
@@ -7,254 +7,316 @@ export function HomePage() {
   return (
     <PageShell>
       <Hero />
-      <FeatureCards />
+      <TwoUpPreview />
+      <HowItWorks />
     </PageShell>
   )
 }
 
+/* ── HERO ───────────────────────────────────────────── */
+
 function Hero() {
   return (
-    <section className="mx-auto max-w-6xl px-6 pt-14 pb-10 md:pt-24 md:pb-16">
-      <div className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-start">
-        <div>
-          <h1 className="text-[40px] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-[52px] md:text-[56px]">
-            Планируйте отпуск и&nbsp;доход&nbsp;—
-            <br className="hidden sm:block" /> без регистрации
-          </h1>
-          <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-muted-foreground md:text-lg">
-            Производственный календарь&nbsp;РФ, расчёт выплат по&nbsp;ТК, ИП и&nbsp;НПД.
-            Всё считается в&nbsp;браузере — мы&nbsp;ничего не&nbsp;сохраняем.
-          </p>
-        </div>
-
-        <HeroPreview />
+    <section className="mx-auto max-w-7xl px-4 pt-14 pb-8 md:px-6 md:pt-20 md:pb-10">
+      <div className="max-w-[760px]">
+        <h1 className="text-[40px] font-semibold leading-[1.05] tracking-tight text-foreground sm:text-[56px] md:text-[64px]">
+          Планируйте отпуск и&nbsp;доход&nbsp;— без регистрации
+        </h1>
+        <p className="mt-6 max-w-[560px] text-[17px] leading-relaxed text-muted-foreground md:text-lg">
+          Производственный календарь&nbsp;РФ и&nbsp;расчёт выплат. Считаем в&nbsp;браузере,
+          ничего не&nbsp;сохраняем.
+        </p>
       </div>
     </section>
   )
 }
 
-function HeroPreview() {
+/* ── TWO-UP PREVIEW (entry points) ──────────────────── */
+
+function TwoUpPreview() {
   return (
-    <div className="hidden flex-col gap-4 md:flex">
-      <VacationPreviewCard />
-      <SalaryPreviewCard />
-    </div>
+    <section className="mx-auto max-w-7xl px-4 pb-12 md:px-6 md:pb-16">
+      <div className="grid gap-5 md:grid-cols-2 md:gap-6">
+        <VacationPreviewCard />
+        <SalaryPreviewCard />
+      </div>
+    </section>
   )
 }
 
-function VacationPreviewCard() {
-  // Мини-календарь недели: Пн–Вс, пятница-праздник, 4–5 отпуск, сб-вс выходные
-  const days: Array<{ d: number; kind: 'work' | 'vac' | 'holi' | 'wknd' }> = [
-    { d: 4, kind: 'vac' },
-    { d: 5, kind: 'vac' },
-    { d: 6, kind: 'vac' },
-    { d: 7, kind: 'vac' },
-    { d: 8, kind: 'vac' },
-    { d: 9, kind: 'holi' },
-    { d: 10, kind: 'wknd' },
+/* ── VACATION PREVIEW CARD ──────────────────────────── */
+
+type MonthCell =
+  | { kind: 'outside' }
+  | { kind: 'work' }
+  | { kind: 'wknd' }
+  | { kind: 'holi' }
+  | { kind: 'vac' }
+
+// May 2026: 1 мая — пт (праздник). Sat/Sun — выходные.
+// Vacation: 4, 5, 6, 7, 8 мая (пн-пт после праздника+выходных).
+// С учётом 9-10 мая (сб, вс) — 9 дней отдыха подряд с 2 по 10 мая.
+function mayPreview(): MonthCell[] {
+  // 1 мая 2026 — пятница → 1-я строка: 4 outside + пт-сб-вс
+  // Заполним ровно 6 строк × 7 = 42 ячейки для консистентности.
+  const cells: MonthCell[] = []
+  // row 0: outside×4 + [1=holi, 2=wknd, 3=wknd]
+  for (let i = 0; i < 4; i++) cells.push({ kind: 'outside' })
+  cells.push({ kind: 'holi' }, { kind: 'wknd' }, { kind: 'wknd' })
+  // row 1: 4-10 мая — [4 vac, 5 vac, 6 vac, 7 vac, 8 vac, 9 wknd(holi), 10 wknd]
+  cells.push(
+    { kind: 'vac' },
+    { kind: 'vac' },
+    { kind: 'vac' },
+    { kind: 'vac' },
+    { kind: 'vac' },
+    { kind: 'holi' },
+    { kind: 'wknd' },
+  )
+  // row 2: 11-17 — пн-пт work, сб-вс wknd
+  const workWeek = (): MonthCell[] => [
+    { kind: 'work' }, { kind: 'work' }, { kind: 'work' }, { kind: 'work' }, { kind: 'work' },
+    { kind: 'wknd' }, { kind: 'wknd' },
   ]
+  cells.push(...workWeek()) // 11-17
+  cells.push(...workWeek()) // 18-24
+  cells.push(...workWeek()) // 25-31
+  // May 2026 has 31 days. By 31 мая = 7 строк (sun). But row 4 ends at 31.
+  // Row 5 — полностью outside для визуальной балансировки
+  for (let i = 0; i < 7; i++) cells.push({ kind: 'outside' })
+  return cells
+}
+
+function VacationPreviewCard() {
+  const cells = mayPreview()
+
   return (
-    <div className="rounded-[22px] border border-border/60 bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          Май 2026
-        </span>
+    <article className="group relative flex h-full flex-col rounded-[24px] border border-border/60 bg-card p-6 transition hover:border-primary/40 md:p-7">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Когда брать отпуск
+          </div>
+          <div className="mt-1 text-[17px] font-semibold tracking-tight text-foreground">
+            Май 2026
+          </div>
+        </div>
         <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
           <Sparkles className="size-3" />
           Лучший вариант
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-7 gap-1.5 text-center text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'].map((d) => (
-          <span key={d}>{d}</span>
-        ))}
-      </div>
-      <div className="mt-1.5 grid grid-cols-7 gap-1.5">
-        {days.map((day) => (
-          <div
-            key={day.d}
-            className={cn(
-              'grid aspect-square place-items-center rounded-lg text-[13px] font-medium',
-              day.kind === 'work' && 'bg-white text-foreground border border-border/60',
-              day.kind === 'vac' && 'bg-primary/15 text-emerald-800 ring-1 ring-primary/30',
-              day.kind === 'holi' && 'bg-rose-50 text-rose-600 border border-rose-100',
-              day.kind === 'wknd' && 'bg-rose-50/50 text-rose-500',
-            )}
-          >
-            {day.d}
-          </div>
-        ))}
+      {/* Mini-month calendar — no numbers, only dot/pill colors */}
+      <div className="mt-5 rounded-2xl bg-muted/30 p-4">
+        <div className="grid grid-cols-7 gap-1.5 text-center text-[9px] font-medium uppercase tracking-wider text-muted-foreground">
+          {['п', 'в', 'с', 'ч', 'п', 'с', 'в'].map((d, i) => (
+            <span key={i}>{d}</span>
+          ))}
+        </div>
+        <div className="mt-2 grid grid-cols-7 gap-1.5">
+          {cells.map((c, i) => (
+            <div
+              key={i}
+              className={cn(
+                'aspect-square rounded-md',
+                c.kind === 'outside' && 'opacity-0',
+                c.kind === 'work' && 'bg-white ring-1 ring-border/60',
+                c.kind === 'wknd' && 'bg-rose-100/70',
+                c.kind === 'holi' && 'bg-rose-200',
+                c.kind === 'vac' && 'bg-primary ring-2 ring-primary/30 ring-offset-1 ring-offset-muted/30',
+              )}
+            />
+          ))}
+        </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-between rounded-xl bg-primary/5 px-3 py-2.5">
-        <div>
-          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            5 дней отпуска
-          </div>
-          <div className="mt-0.5 text-[18px] font-semibold text-foreground">
-            9 дней отдыха
-          </div>
+      {/* Human-readable benefit */}
+      <div className="mt-5 border-t border-border/60 pt-5">
+        <div className="text-[13px] text-muted-foreground">
+          Берёте 5&nbsp;дней отпуска
         </div>
-        <div className="text-right">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            Выгода
-          </div>
-          <div className="mt-0.5 text-[18px] font-semibold text-primary">
-            ×1.80
-          </div>
+        <div className="mt-1 text-[22px] font-semibold leading-tight tracking-tight text-foreground md:text-[24px]">
+          отдыхаете 9&nbsp;дней подряд
         </div>
       </div>
-    </div>
+
+      <Link
+        href="/vacation"
+        className="mt-auto inline-flex items-center gap-1.5 pt-6 text-[15px] font-medium text-primary"
+      >
+        Открыть
+        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+      </Link>
+    </article>
   )
 }
 
+/* ── SALARY PREVIEW CARD ────────────────────────────── */
+
+type YearMonth = {
+  m: string
+  net: number
+  anomaly?: 'low' | 'high'
+}
+
+const YEAR_MONTHS: YearMonth[] = [
+  { m: 'Янв', net: 170_200, anomaly: 'low' },
+  { m: 'Фев', net: 174_000 },
+  { m: 'Мар', net: 174_000 },
+  { m: 'Апр', net: 174_000 },
+  { m: 'Май', net: 165_500, anomaly: 'low' },
+  { m: 'Июн', net: 174_000 },
+  { m: 'Июл', net: 174_000 },
+  { m: 'Авг', net: 174_000 },
+  { m: 'Сен', net: 174_000 },
+  { m: 'Окт', net: 174_000 },
+  { m: 'Ноя', net: 171_500, anomaly: 'low' },
+  { m: 'Дек', net: 212_400, anomaly: 'high' },
+]
+
 function SalaryPreviewCard() {
-  const rows: Array<{ month: string; advance: number; salary: number }> = [
-    { month: 'Сентябрь', advance: 80_000, salary: 94_000 },
-    { month: 'Октябрь', advance: 80_000, salary: 94_000 },
-    { month: 'Ноябрь', advance: 80_000, salary: 94_000 },
-  ]
-  const total = rows.reduce((acc, r) => acc + r.advance + r.salary, 0)
+  const max = Math.max(...YEAR_MONTHS.map((m) => m.net))
+  const total = YEAR_MONTHS.reduce((acc, m) => acc + m.net, 0)
+  const avg = Math.round(total / 12)
   const fmt = (n: number) => n.toLocaleString('ru-RU')
 
   return (
-    <div className="rounded-[22px] border border-border/60 bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
-      <div className="flex items-center justify-between">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          ТК РФ · осень 2026
-        </span>
+    <article className="group relative flex h-full flex-col rounded-[24px] border border-border/60 bg-card p-6 transition hover:border-primary/40 md:p-7">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Сколько на руки
+          </div>
+          <div className="mt-1 text-[17px] font-semibold tracking-tight text-foreground">
+            2026 · 12 выплат
+          </div>
+        </div>
         <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
-          <Wallet className="size-3" />
-          НДФЛ 13%
+          <BarChart3 className="size-3" />
+          Каждый месяц
         </span>
       </div>
 
-      <div className="mt-4 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        <span>Месяц</span>
-        <span className="px-1 text-center">Аванс · Зарплата</span>
-        <span className="text-right">На руки</span>
-      </div>
-
-      <ul className="mt-1 divide-y divide-border/60">
-        {rows.map((r) => {
-          const take = r.advance + r.salary
-          const advPct = (r.advance / take) * 100
+      {/* Vertical bar chart of 12 months */}
+      <ul className="mt-5 space-y-1.5">
+        {YEAR_MONTHS.map((row) => {
+          const width = (row.net / max) * 100
           return (
             <li
-              key={r.month}
-              className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 py-2.5"
+              key={row.m}
+              className="grid grid-cols-[32px_1fr_auto] items-center gap-2.5"
             >
-              <span className="text-[13px] font-medium text-foreground">
-                {r.month}
+              <span className="text-[11px] font-medium tabular-nums text-muted-foreground">
+                {row.m}
               </span>
-              <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+              <div className="relative h-2 overflow-hidden rounded-full bg-muted">
                 <div
-                  className="h-full bg-primary"
-                  style={{ width: `${advPct}%` }}
-                  title={`Аванс ${fmt(r.advance)} ₽`}
-                />
-                <div
-                  className="h-full bg-primary/45"
-                  style={{ width: `${100 - advPct}%` }}
-                  title={`Зарплата ${fmt(r.salary)} ₽`}
+                  className={cn(
+                    'h-full rounded-full',
+                    row.anomaly === 'low'
+                      ? 'bg-rose-300'
+                      : row.anomaly === 'high'
+                      ? 'bg-primary'
+                      : 'bg-primary/50',
+                  )}
+                  style={{ width: `${width}%` }}
                 />
               </div>
-              <span className="text-right text-[13px] font-semibold tabular-nums text-foreground">
-                {fmt(take)} ₽
+              <span
+                className={cn(
+                  'text-[12px] tabular-nums',
+                  row.anomaly === 'high'
+                    ? 'font-semibold text-primary'
+                    : row.anomaly === 'low'
+                    ? 'text-rose-600'
+                    : 'text-muted-foreground',
+                )}
+              >
+                {fmt(row.net)}&nbsp;₽
               </span>
             </li>
           )
         })}
       </ul>
 
-      <div className="mt-3 flex items-center gap-3 text-[11px] text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-primary" />
-          Аванс 80 000 ₽
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-full bg-primary/45" />
-          Зарплата 94 000 ₽
-        </span>
-      </div>
-
-      <div className="mt-4 flex items-center justify-between rounded-xl bg-primary/5 px-3 py-2.5">
-        <div>
-          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            За 3 месяца
+      {/* Summary */}
+      <div className="mt-5 border-t border-border/60 pt-5">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <div className="text-[13px] text-muted-foreground">В среднем</div>
+            <div className="mt-0.5 text-[17px] font-semibold tabular-nums text-foreground">
+              {fmt(avg)}&nbsp;₽ / мес
+            </div>
           </div>
-          <div className="mt-0.5 text-[11px] text-muted-foreground">
-            после налога
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-            На руки
-          </div>
-          <div className="mt-0.5 text-[20px] font-semibold tabular-nums text-primary">
-            {fmt(total)} ₽
+          <div className="text-right">
+            <div className="text-[13px] text-muted-foreground">За год</div>
+            <div className="mt-0.5 text-[22px] font-semibold tabular-nums tracking-tight text-primary">
+              {fmt(total)}&nbsp;₽
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  )
-}
 
-function FeatureCards() {
-  return (
-    <section className="mx-auto grid max-w-6xl gap-5 px-6 pb-20 md:grid-cols-2 md:gap-6 md:pb-28 md:pt-20">
-      <FeatureCard
-        href="/vacation"
-        icon={<Calendar className="size-7" strokeWidth={1.6} />}
-        title="Когда брать отпуск"
-      >
-        Подскажем, в&nbsp;какие даты 2026&nbsp;года отпуск максимально склеится
-        с&nbsp;праздниками и&nbsp;выходными.
-      </FeatureCard>
-      <FeatureCard
+      <Link
         href="/salary"
-        icon={<Wallet className="size-7" strokeWidth={1.6} />}
-        title="Сколько денег на руки"
+        className="mt-auto inline-flex items-center gap-1.5 pt-6 text-[15px] font-medium text-primary"
       >
-        Покажем, сколько вы&nbsp;получаете в&nbsp;месяц и&nbsp;за&nbsp;год
-        с&nbsp;учётом налогов и&nbsp;режима работы.
-      </FeatureCard>
-    </section>
+        Открыть
+        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+      </Link>
+    </article>
   )
 }
 
-function FeatureCard({
-  href,
-  icon,
-  title,
-  children,
-}: {
-  href: string
-  icon: React.ReactNode
-  title: string
-  children: React.ReactNode
-}) {
+/* ── HOW IT WORKS ───────────────────────────────────── */
+
+function HowItWorks() {
+  const steps: Array<{ icon: React.ReactNode; title: string; text: string }> = [
+    {
+      icon: <SlidersHorizontal className="size-5" strokeWidth={1.6} />,
+      title: 'Выберите параметры',
+      text: 'Дни отпуска или сумму дохода и налоговый режим.',
+    },
+    {
+      icon: <BarChart3 className="size-5" strokeWidth={1.6} />,
+      title: 'Смотрите расчёт',
+      text: 'Лучшие даты отпуска и распределение выплат по месяцам.',
+    },
+    {
+      icon: <Download className="size-5" strokeWidth={1.6} />,
+      title: 'Скачайте в Excel',
+      text: 'Готовый файл — чтобы обсудить с HR или сохранить себе.',
+    },
+  ]
+
   return (
-    <Link
-      href={href}
-      className="group relative flex h-full flex-col rounded-[24px] border border-border/60 bg-card p-6 transition duration-200 hover:border-primary/40 md:p-8"
-    >
-      <div className="grid size-14 place-items-center rounded-[16px] bg-primary/10 text-primary md:size-16">
-        {icon}
-      </div>
-      <h2 className="mt-7 text-[22px] font-semibold tracking-tight text-foreground md:text-2xl">
-        {title}
+    <section className="mx-auto max-w-7xl px-4 pb-24 md:px-6 md:pb-32">
+      <h2 className="text-[22px] font-semibold tracking-tight text-foreground md:text-[28px]">
+        Как это работает
       </h2>
-      <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground md:text-base">
-        {children}
-      </p>
-      <span className="mt-auto inline-flex items-center gap-1.5 pt-6 text-sm font-medium text-primary">
-        Открыть
-        <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
-          →
-        </span>
-      </span>
-    </Link>
+      <ol className="mt-8 grid gap-6 md:grid-cols-3 md:gap-8">
+        {steps.map((s, i) => (
+          <li key={i} className="flex flex-col">
+            <div className="flex items-center gap-3">
+              <span className="grid size-10 place-items-center rounded-xl bg-primary/10 text-primary">
+                {s.icon}
+              </span>
+              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Шаг {i + 1}
+              </span>
+            </div>
+            <div className="mt-4 text-[17px] font-semibold tracking-tight text-foreground">
+              {s.title}
+            </div>
+            <div className="mt-1 text-[15px] leading-relaxed text-muted-foreground">
+              {s.text}
+            </div>
+          </li>
+        ))}
+      </ol>
+    </section>
   )
 }
