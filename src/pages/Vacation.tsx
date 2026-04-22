@@ -161,9 +161,8 @@ function CalendarCard({
   onPrev: () => void
   onNext: () => void
 }) {
-  // stub May 2026: Mon starts on April 27 (col 0 empty block... simplified)
-  // For preview we render a generic 6-week grid with sample states
-  const days = buildMonthPreview(monthIndex)
+  // Always render exactly 6 weeks (42 cells) so month height never changes
+  const days = padTo42(buildMonthPreview(monthIndex))
 
   return (
     <div className="rounded-[24px] border border-border/60 bg-card p-5 md:p-6">
@@ -314,6 +313,11 @@ function pad(n: number): DayState[] {
   return Array.from({ length: n }).map(() => ({ num: null, kind: 'outside' }))
 }
 
+function padTo42(days: DayState[]): DayState[] {
+  if (days.length >= 42) return days.slice(0, 42)
+  return [...days, ...pad(42 - days.length)]
+}
+
 function pluralDays(n: number) {
   const mod100 = n % 100
   const mod10 = n % 10
@@ -350,7 +354,7 @@ function RecommendationsCard({
                 type="button"
                 onClick={() => onSelect(isActive ? null : rec.id)}
                 className={cn(
-                  'flex w-full items-center gap-4 rounded-2xl border px-4 py-3 text-left transition',
+                  'flex h-[64px] w-full items-center gap-4 rounded-2xl border px-4 text-left transition',
                   isActive
                     ? 'border-primary/40 bg-primary/10'
                     : 'border-border/60 bg-white hover:border-primary/30',
@@ -358,7 +362,7 @@ function RecommendationsCard({
               >
                 <span
                   className={cn(
-                    'grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold',
+                    'grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold tabular-nums',
                     isActive
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground',
@@ -366,13 +370,12 @@ function RecommendationsCard({
                 >
                   {rec.id}
                 </span>
-                <span className="flex-1">
-                  <span className="block text-[15px] font-medium text-foreground">
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-medium text-foreground">
                     {rec.range}
                   </span>
-                  <span className="mt-0.5 block text-[13px] text-muted-foreground">
-                    {rec.rest} дней отдыха подряд · эффективность&nbsp;
-                    {rec.efficiency.toFixed(2)}
+                  <span className="mt-0.5 block truncate text-[13px] text-muted-foreground tabular-nums">
+                    {rec.rest} дней отдыха · выгода ×{rec.efficiency.toFixed(2)}
                   </span>
                 </span>
               </button>

@@ -15,7 +15,7 @@ export function HomePage() {
 function Hero() {
   return (
     <section className="mx-auto max-w-6xl px-6 pt-14 pb-10 md:pt-24 md:pb-16">
-      <div className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-center">
+      <div className="grid gap-10 md:grid-cols-[1.1fr_0.9fr] md:items-start">
         <div>
           <h1 className="text-[40px] font-semibold leading-[1.1] tracking-tight text-foreground sm:text-[52px] md:text-[56px]">
             Планируйте отпуск и&nbsp;доход&nbsp;—
@@ -238,7 +238,7 @@ function FeatureCard({
   return (
     <Link
       href={href}
-      className="group relative flex flex-col rounded-[24px] border border-border/60 bg-card p-6 transition duration-200 hover:border-primary/40 md:p-8"
+      className="group relative flex h-full flex-col rounded-[24px] border border-border/60 bg-card p-6 transition duration-200 hover:border-primary/40 md:p-8"
     >
       <div className="grid size-14 place-items-center rounded-[16px] bg-primary/10 text-primary md:size-16">
         {icon}
@@ -249,7 +249,7 @@ function FeatureCard({
       <p className="mt-2 text-[15px] leading-relaxed text-muted-foreground md:text-base">
         {children}
       </p>
-      <span className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+      <span className="mt-auto inline-flex items-center gap-1.5 pt-6 text-sm font-medium text-primary">
         Открыть
         <span aria-hidden className="transition-transform group-hover:translate-x-0.5">
           →

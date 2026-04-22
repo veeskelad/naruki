@@ -42,13 +42,15 @@ export function SalaryPage() {
       <div className="mx-auto max-w-6xl px-6 pt-10 pb-20 md:pt-14 md:pb-28">
         <SalaryHeader />
 
-        <div className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-          <SalaryForm
-            employment={employment}
-            onEmploymentChange={setEmployment}
-            grossMode={grossMode}
-            onGrossModeChange={setGrossMode}
-          />
+        <div className="mt-8 grid items-start gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+          <div className="lg:min-h-[580px]">
+            <SalaryForm
+              employment={employment}
+              onEmploymentChange={setEmployment}
+              grossMode={grossMode}
+              onGrossModeChange={setGrossMode}
+            />
+          </div>
 
           <div className="flex flex-col gap-6">
             <SummaryCards />
@@ -289,7 +291,7 @@ function SummaryCard({
   return (
     <div
       className={cn(
-        'rounded-[20px] border p-4 md:p-5',
+        'flex h-[120px] flex-col justify-between rounded-[20px] border p-4 md:h-[132px] md:p-5',
         accent
           ? 'border-primary/20 bg-primary/5'
           : 'border-border/60 bg-card',
@@ -298,10 +300,12 @@ function SummaryCard({
       <div className="text-[12px] font-medium text-muted-foreground">
         {label}
       </div>
-      <div className="mt-2 text-[22px] font-semibold tracking-tight text-foreground md:text-[26px]">
-        {value}
+      <div>
+        <div className="text-[22px] font-semibold tabular-nums tracking-tight text-foreground md:text-[26px]">
+          {value}
+        </div>
+        <div className="mt-1 text-[12px] text-muted-foreground">{hint}</div>
       </div>
-      <div className="mt-1 text-[12px] text-muted-foreground">{hint}</div>
     </div>
   )
 }
@@ -389,15 +393,23 @@ function MonthlyTable() {
   return (
     <>
       <div className="hidden overflow-hidden rounded-xl border border-border/60 md:block">
-        <table className="w-full text-[14px]">
+        <table className="w-full table-fixed text-[14px] tabular-nums">
+          <colgroup>
+            <col className="w-[14%]" />
+            <col className="w-[16%]" />
+            <col className="w-[16%]" />
+            <col className="w-[18%]" />
+            <col className="w-[16%]" />
+            <col className="w-[20%]" />
+          </colgroup>
           <thead className="bg-muted/50 text-left text-[12px] uppercase tracking-wider text-muted-foreground">
             <tr>
               <th className="px-4 py-3 font-medium">Месяц</th>
-              <th className="px-4 py-3 font-medium">Аванс</th>
-              <th className="px-4 py-3 font-medium">Зарплата</th>
-              <th className="px-4 py-3 font-medium">На руки</th>
-              <th className="px-4 py-3 font-medium">Налоги</th>
-              <th className="px-4 py-3 font-medium">Накопительно</th>
+              <th className="px-4 py-3 font-medium text-right">Аванс</th>
+              <th className="px-4 py-3 font-medium text-right">Зарплата</th>
+              <th className="px-4 py-3 font-medium text-right">На руки</th>
+              <th className="px-4 py-3 font-medium text-right">Налоги</th>
+              <th className="px-4 py-3 font-medium text-right">Накопительно</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/60">
@@ -406,19 +418,19 @@ function MonthlyTable() {
               return (
                 <tr key={i} className="bg-white">
                   <td className="px-4 py-3 font-medium">{MONTHS[i]}</td>
-                  <td className="px-4 py-3 text-muted-foreground">
+                  <td className="px-4 py-3 text-right text-muted-foreground">
                     {m.advance.toLocaleString('ru-RU')} ₽
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">
+                  <td className="px-4 py-3 text-right text-muted-foreground">
                     {m.salary.toLocaleString('ru-RU')} ₽
                   </td>
-                  <td className="px-4 py-3 font-medium text-emerald-700">
+                  <td className="px-4 py-3 text-right font-medium text-emerald-700">
                     {m.take.toLocaleString('ru-RU')} ₽
                   </td>
-                  <td className="px-4 py-3 text-rose-600">
+                  <td className="px-4 py-3 text-right text-rose-600">
                     {m.tax.toLocaleString('ru-RU')} ₽
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground">
+                  <td className="px-4 py-3 text-right text-muted-foreground">
                     {cumulative.toLocaleString('ru-RU')} ₽
                   </td>
                 </tr>
@@ -426,10 +438,10 @@ function MonthlyTable() {
             })}
             <tr className="bg-muted/30 font-semibold">
               <td className="px-4 py-3">Итого</td>
-              <td className="px-4 py-3">960 000 ₽</td>
-              <td className="px-4 py-3">1 128 000 ₽</td>
-              <td className="px-4 py-3 text-emerald-700">2 088 000 ₽</td>
-              <td className="px-4 py-3 text-rose-600">312 000 ₽</td>
+              <td className="px-4 py-3 text-right">960 000 ₽</td>
+              <td className="px-4 py-3 text-right">1 128 000 ₽</td>
+              <td className="px-4 py-3 text-right text-emerald-700">2 088 000 ₽</td>
+              <td className="px-4 py-3 text-right text-rose-600">312 000 ₽</td>
               <td className="px-4 py-3" />
             </tr>
           </tbody>
