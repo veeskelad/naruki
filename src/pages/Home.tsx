@@ -35,11 +35,9 @@ function Hero() {
 
 function HeroPreview() {
   return (
-    <div className="relative hidden md:block">
-      <div className="relative">
-        <VacationPreviewCard />
-        <SalaryPreviewCard />
-      </div>
+    <div className="hidden flex-col gap-4 md:flex">
+      <VacationPreviewCard />
+      <SalaryPreviewCard />
     </div>
   )
 }
@@ -112,31 +110,92 @@ function VacationPreviewCard() {
 }
 
 function SalaryPreviewCard() {
+  const rows: Array<{ month: string; advance: number; salary: number }> = [
+    { month: 'Сентябрь', advance: 80_000, salary: 94_000 },
+    { month: 'Октябрь', advance: 80_000, salary: 94_000 },
+    { month: 'Ноябрь', advance: 80_000, salary: 94_000 },
+  ]
+  const total = rows.reduce((acc, r) => acc + r.advance + r.salary, 0)
+  const fmt = (n: number) => n.toLocaleString('ru-RU')
+
   return (
-    <div className="absolute -bottom-12 -left-8 w-[72%] rounded-[20px] border border-border/60 bg-card p-4 shadow-[0_10px_25px_-15px_rgba(15,23,42,0.15)]">
+    <div className="rounded-[22px] border border-border/60 bg-card p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
       <div className="flex items-center justify-between">
         <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-          ТК РФ · декабрь
+          ТК РФ · осень 2026
         </span>
-        <span className="text-[11px] text-muted-foreground">13%</span>
+        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-medium text-primary">
+          <Wallet className="size-3" />
+          НДФЛ 13%
+        </span>
       </div>
-      <div className="mt-3 grid grid-cols-2 gap-3">
+
+      <div className="mt-4 grid grid-cols-[auto_1fr_auto] items-center gap-x-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        <span>Месяц</span>
+        <span className="px-1 text-center">Аванс · Зарплата</span>
+        <span className="text-right">На руки</span>
+      </div>
+
+      <ul className="mt-1 divide-y divide-border/60">
+        {rows.map((r) => {
+          const take = r.advance + r.salary
+          const advPct = (r.advance / take) * 100
+          return (
+            <li
+              key={r.month}
+              className="grid grid-cols-[auto_1fr_auto] items-center gap-x-3 py-2.5"
+            >
+              <span className="text-[13px] font-medium text-foreground">
+                {r.month}
+              </span>
+              <div className="flex h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary"
+                  style={{ width: `${advPct}%` }}
+                  title={`Аванс ${fmt(r.advance)} ₽`}
+                />
+                <div
+                  className="h-full bg-primary/45"
+                  style={{ width: `${100 - advPct}%` }}
+                  title={`Зарплата ${fmt(r.salary)} ₽`}
+                />
+              </div>
+              <span className="text-right text-[13px] font-semibold tabular-nums text-foreground">
+                {fmt(take)} ₽
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+
+      <div className="mt-3 flex items-center gap-3 text-[11px] text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-primary" />
+          Аванс 80 000 ₽
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="size-2 rounded-full bg-primary/45" />
+          Зарплата 94 000 ₽
+        </span>
+      </div>
+
+      <div className="mt-4 flex items-center justify-between rounded-xl bg-primary/5 px-3 py-2.5">
         <div>
-          <div className="text-[11px] text-muted-foreground">До налогов</div>
-          <div className="mt-1 text-[17px] font-semibold text-foreground line-through decoration-muted-foreground/50">
-            200 000 ₽
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            За 3 месяца
+          </div>
+          <div className="mt-0.5 text-[11px] text-muted-foreground">
+            после налога
           </div>
         </div>
-        <div>
-          <div className="text-[11px] text-muted-foreground">На руки</div>
-          <div className="mt-1 text-[17px] font-semibold text-primary">
-            174 000 ₽
+        <div className="text-right">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            На руки
+          </div>
+          <div className="mt-0.5 text-[20px] font-semibold tabular-nums text-primary">
+            {fmt(total)} ₽
           </div>
         </div>
-      </div>
-      <div className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-muted">
-        <div className="h-full bg-primary" style={{ width: '87%' }} />
-        <div className="h-full bg-rose-300" style={{ width: '13%' }} />
       </div>
     </div>
   )
