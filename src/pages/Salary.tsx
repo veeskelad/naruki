@@ -43,9 +43,12 @@ export function SalaryPage() {
   const [children, setChildren] = useState('0')
   const [useProgressive, setUseProgressive] = useState(true)
   const [useChildDeduction, setUseChildDeduction] = useState(true)
+  const [npdSource, setNpdSource] = useState<'physical' | 'legal' | 'mixed'>('mixed')
   const [npdLegalShare, setNpdLegalShare] = useState('60')
   const [npdBonus, setNpdBonus] = useState(false)
   const [usnContribs, setUsnContribs] = useState('57 390')
+  const [usnFrequency, setUsnFrequency] = useState<'month' | 'quarter' | 'irregular'>('month')
+  const [useUsnContribs, setUseUsnContribs] = useState(true)
   const [customRate, setCustomRate] = useState('13')
   const [advanceDay, setAdvanceDay] = useState('15')
   const [salaryDay, setSalaryDay] = useState('30')
@@ -105,12 +108,18 @@ export function SalaryPage() {
             onUseProgressiveChange={setUseProgressive}
             useChildDeduction={useChildDeduction}
             onUseChildDeductionChange={setUseChildDeduction}
+            npdSource={npdSource}
+            onNpdSourceChange={setNpdSource}
             npdLegalShare={npdLegalShare}
             onNpdLegalShareChange={setNpdLegalShare}
             npdBonus={npdBonus}
             onNpdBonusChange={setNpdBonus}
             usnContribs={usnContribs}
             onUsnContribsChange={setUsnContribs}
+            usnFrequency={usnFrequency}
+            onUsnFrequencyChange={setUsnFrequency}
+            useUsnContribs={useUsnContribs}
+            onUseUsnContribsChange={setUseUsnContribs}
             customRate={customRate}
             onCustomRateChange={setCustomRate}
             advanceDay={advanceDay}
@@ -154,7 +163,7 @@ function SalaryHeader() {
         </p>
         <div className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-[12px] text-muted-foreground">
           <Lock className="size-3" strokeWidth={1.8} />
-          Ничего не&nbsp;уходит на&nbsp;сервер
+          Всё считается в&nbsp;вашем браузере
         </div>
       </div>
       <Button variant="outline" className="gap-2 rounded-xl">
@@ -178,12 +187,18 @@ function SalaryForm({
   onUseProgressiveChange,
   useChildDeduction,
   onUseChildDeductionChange,
+  npdSource,
+  onNpdSourceChange,
   npdLegalShare,
   onNpdLegalShareChange,
   npdBonus,
   onNpdBonusChange,
   usnContribs,
   onUsnContribsChange,
+  usnFrequency,
+  onUsnFrequencyChange,
+  useUsnContribs,
+  onUseUsnContribsChange,
   customRate,
   onCustomRateChange,
   advanceDay,
@@ -203,12 +218,18 @@ function SalaryForm({
   onUseProgressiveChange: (v: boolean) => void
   useChildDeduction: boolean
   onUseChildDeductionChange: (v: boolean) => void
+  npdSource: 'physical' | 'legal' | 'mixed'
+  onNpdSourceChange: (v: 'physical' | 'legal' | 'mixed') => void
   npdLegalShare: string
   onNpdLegalShareChange: (v: string) => void
   npdBonus: boolean
   onNpdBonusChange: (v: boolean) => void
   usnContribs: string
   onUsnContribsChange: (v: string) => void
+  usnFrequency: 'month' | 'quarter' | 'irregular'
+  onUsnFrequencyChange: (v: 'month' | 'quarter' | 'irregular') => void
+  useUsnContribs: boolean
+  onUseUsnContribsChange: (v: boolean) => void
   customRate: string
   onCustomRateChange: (v: string) => void
   advanceDay: string
@@ -282,7 +303,7 @@ function SalaryForm({
           <>
             <div className="rounded-2xl border border-border/60 bg-muted/30 p-4">
               <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-                График выплат
+                Даты выплат
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <Field label="Аванс">
@@ -316,7 +337,7 @@ function SalaryForm({
               </div>
             </div>
 
-            <Field label="Дети">
+            <Field label="Дети для вычета">
               <Select value={children} onValueChange={onChildrenChange}>
                 <SelectTrigger className="h-11 rounded-xl">
                   <SelectValue />
@@ -334,56 +355,130 @@ function SalaryForm({
 
         {employment === 'npd' && (
           <>
-            <Field label="Доля дохода от юрлиц, %">
-              <div className="flex h-11 items-center gap-2 rounded-xl border border-border/60 bg-white px-3">
-                <Input
-                  className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
-                  inputMode="numeric"
-                  placeholder="60"
-                  value={npdLegalShare}
-                  onChange={(e) => onNpdLegalShareChange(e.target.value)}
-                />
-                <span className="text-sm text-muted-foreground">%</span>
-              </div>
+            <Field label="Откуда доход">
+              <Segmented
+                value={npdSource}
+                onChange={onNpdSourceChange}
+                options={[
+                  { value: 'physical', label: 'Физлица' },
+                  { value: 'legal', label: 'Юрлица / ИП' },
+                  { value: 'mixed', label: 'Смешанно' },
+                ]}
+              />
             </Field>
+
+            {npdSource === 'mixed' && (
+              <Field label="Доля дохода от юрлиц и ИП">
+                <div className="flex h-11 items-center gap-2 rounded-xl border border-border/60 bg-white px-3">
+                  <Input
+                    className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
+                    inputMode="numeric"
+                    placeholder="60"
+                    value={npdLegalShare}
+                    onChange={(e) => onNpdLegalShareChange(e.target.value)}
+                  />
+                  <span className="text-sm text-muted-foreground">%</span>
+                </div>
+              </Field>
+            )}
+
             <CheckboxWithTooltip
               id="npd-bonus"
-              label="Стартовый бонус НПД"
+              label="Учесть стартовый бонус НПД"
               checked={npdBonus}
               onCheckedChange={onNpdBonusChange}
-              tooltip="Разовый бонус 10 000 ₽ даёт 1 п.п. скидки к ставке: 4%→3% с физлиц, 6%→5% с юрлиц — пока бонус не исчерпан."
+              tooltip="Стартовый бонус уменьшает сумму налога, пока он не исчерпан. Для новых плательщиков НПД даёт 1 п.п. скидки к ставке (4%→3%, 6%→5%)."
             />
           </>
         )}
 
         {employment === 'ip_usn' && (
-          <Field label="Уплаченные фикс-взносы за год">
-            <div className="flex h-11 items-center gap-2 rounded-xl border border-border/60 bg-white px-3">
-              <Input
-                className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
-                inputMode="numeric"
-                placeholder="55 500"
-                value={usnContribs}
-                onChange={(e) => onUsnContribsChange(e.target.value)}
-              />
-              <span className="text-sm text-muted-foreground">₽</span>
-            </div>
-          </Field>
+          <>
+            <Field label="Фикс-взносы за год">
+              <div className="flex h-11 items-center gap-2 rounded-xl border border-border/60 bg-white px-3">
+                <Input
+                  className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
+                  inputMode="numeric"
+                  placeholder="57 390"
+                  value={usnContribs}
+                  onChange={(e) => onUsnContribsChange(e.target.value)}
+                />
+                <span className="text-sm text-muted-foreground">₽</span>
+              </div>
+              <span className="text-[12px] text-muted-foreground">
+                По умолчанию — 57 390 ₽ (2026). Можно изменить вручную.
+              </span>
+            </Field>
+
+            <Field label="Частота поступлений">
+              <Select value={usnFrequency} onValueChange={(v) => onUsnFrequencyChange(v as typeof usnFrequency)}>
+                <SelectTrigger className="h-11 rounded-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="month">Ежемесячно</SelectItem>
+                  <SelectItem value="quarter">Ежеквартально</SelectItem>
+                  <SelectItem value="irregular">Нерегулярно</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+
+            <CheckboxWithTooltip
+              id="use-usn-contribs"
+              label="Учитывать фикс-взносы в расчёте"
+              checked={useUsnContribs}
+              onCheckedChange={onUseUsnContribsChange}
+              tooltip="Взносы уменьшают сумму налога в пределах действующих правил. Если снять галку, сервис покажет «грязный» налог без зачёта взносов."
+            />
+
+            <p className="text-[12px] leading-relaxed text-muted-foreground">
+              1% с&nbsp;дохода свыше 300&nbsp;000&nbsp;₽ учитывается автоматически.
+            </p>
+          </>
         )}
 
         {employment === 'custom' && (
-          <Field label="Ставка налога">
-            <div className="flex h-11 items-center gap-2 rounded-xl border border-border/60 bg-white px-3">
-              <Input
-                className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
-                inputMode="numeric"
-                placeholder="13"
-                value={customRate}
-                onChange={(e) => onCustomRateChange(e.target.value)}
-              />
-              <span className="text-sm text-muted-foreground">%</span>
+          <>
+            <Field label="Ставка налога, %">
+              <div className="flex h-11 items-center gap-2 rounded-xl border border-border/60 bg-white px-3">
+                <Input
+                  className="border-none bg-transparent p-0 shadow-none focus-visible:ring-0"
+                  inputMode="numeric"
+                  placeholder="13"
+                  value={customRate}
+                  onChange={(e) => onCustomRateChange(e.target.value)}
+                />
+                <span className="text-sm text-muted-foreground">%</span>
+              </div>
+              <span className="text-[12px] text-muted-foreground">
+                Используй этот режим, если хочешь задать свою ставку вручную.
+              </span>
+            </Field>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[12px] uppercase tracking-wider text-muted-foreground">
+                Быстрый выбор
+              </span>
+              {['6', '13', '15', '20'].map((preset) => {
+                const active = customRate === preset
+                return (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => onCustomRateChange(preset)}
+                    className={cn(
+                      'rounded-full border px-3 py-1 text-[13px] font-medium tabular-nums transition',
+                      active
+                        ? 'border-primary/50 bg-primary/10 text-primary'
+                        : 'border-border/60 bg-white text-foreground hover:border-primary/30',
+                    )}
+                  >
+                    {preset}%
+                  </button>
+                )
+              })}
             </div>
-          </Field>
+          </>
         )}
       </div>
 
@@ -411,8 +506,8 @@ function SalaryForm({
         </div>
       )}
 
-      {/* Placeholder checkbox block — keep layout stable when no refinements */}
-      {employment !== 'tk' && employment !== 'npd' && (
+      {/* Placeholder: только для Свой процент (НПД, УСН имеют свои уточнения в слоте) */}
+      {employment === 'custom' && (
         <div className="flex flex-col gap-3 border-t border-border/60 pt-5">
           <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
             Уточнения
@@ -448,6 +543,39 @@ function Field({
         {right}
       </div>
       {children}
+    </div>
+  )
+}
+
+function Segmented<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T
+  onChange: (v: T) => void
+  options: Array<{ value: T; label: string }>
+}) {
+  return (
+    <div className="grid h-11 grid-cols-3 overflow-hidden rounded-xl border border-border/60 bg-muted/40 p-1 text-[13px]">
+      {options.map((opt) => {
+        const active = opt.value === value
+        return (
+          <button
+            key={opt.value}
+            type="button"
+            onClick={() => onChange(opt.value)}
+            className={cn(
+              'rounded-lg px-2 font-medium transition',
+              active
+                ? 'bg-white text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {opt.label}
+          </button>
+        )
+      })}
     </div>
   )
 }
@@ -537,8 +665,9 @@ function SummaryCards({
   return (
     <div className="relative">
       {isDemo && (
-        <div className="pointer-events-none absolute -top-3 right-3 z-10 rounded-full border border-border/60 bg-background/90 px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm">
-          Демо: пример для&nbsp;100&nbsp;000&nbsp;₽ до&nbsp;налогов
+        <div className="pointer-events-none absolute -top-3 right-3 z-10 inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/90 px-3 py-1 text-[11px] font-medium text-muted-foreground shadow-sm">
+          <span aria-hidden>ⓘ</span>
+          Пример расчёта&nbsp;— введи свою сумму
         </div>
       )}
       <div

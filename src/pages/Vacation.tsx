@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
+  HelpCircle,
   Minus,
   Plus,
   SlidersHorizontal,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Select,
   SelectContent,
@@ -18,6 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 const MONTHS = [
@@ -28,29 +42,32 @@ const WEEKDAYS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
 
 // stub recommendations for preview
 const RECOMMENDATIONS = [
-  { id: 1, range: '5—11 мая', rest: 13, efficiency: 1.86 },
-  { id: 2, range: '9—15 июня', rest: 11, efficiency: 1.57 },
-  { id: 3, range: '2—8 ноября', rest: 10, efficiency: 1.43 },
-  { id: 4, range: '30 декабря — 8 января', rest: 10, efficiency: 1.43 },
-  { id: 5, range: '20—24 февраля', rest: 7, efficiency: 1.4 },
-]
-
-const WORST_MONTHS = [
-  { month: 'Январь', reason: 'много праздников, отпуск «съедается»' },
-  { month: 'Май', reason: 'короткий месяц, рабочие дни условно дороже' },
-  { month: 'Февраль', reason: 'мало рабочих дней, финансово невыгодно' },
+  { id: 1, range: '4—8 мая', rest: 9, vacDays: 5, best: true },
+  { id: 2, range: '9—11 июня', rest: 6, vacDays: 3, best: false },
+  { id: 3, range: '2—6 ноября', rest: 8, vacDays: 5, best: false },
+  { id: 4, range: '30 декабря — 8 января', rest: 12, vacDays: 5, best: false },
+  { id: 5, range: '20—24 февраля', rest: 7, vacDays: 4, best: false },
 ]
 
 export function VacationPage() {
   const [days, setDays] = useState(7)
   const [monthIndex, setMonthIndex] = useState(4) // Май
   const [activeRec, setActiveRec] = useState<number | null>(1)
+  const [longRest, setLongRest] = useState(true)
+  const [singleMonth, setSingleMonth] = useState(false)
 
   return (
     <PageShell>
       <div className="mx-auto max-w-6xl px-6 pt-10 pb-20 md:pt-14 md:pb-28">
         <VacationHeader />
-        <Toolbar days={days} onDaysChange={setDays} />
+        <Toolbar
+          days={days}
+          onDaysChange={setDays}
+          longRest={longRest}
+          onLongRestChange={setLongRest}
+          singleMonth={singleMonth}
+          onSingleMonthChange={setSingleMonth}
+        />
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
           <CalendarCard
@@ -67,7 +84,7 @@ export function VacationPage() {
         </div>
 
         <div className="mt-6">
-          <WorstMonthsCard />
+          <InsightsCard />
         </div>
       </div>
     </PageShell>
@@ -96,10 +113,19 @@ function VacationHeader() {
 function Toolbar({
   days,
   onDaysChange,
+  longRest,
+  onLongRestChange,
+  singleMonth,
+  onSingleMonthChange,
 }: {
   days: number
   onDaysChange: (n: number) => void
+  longRest: boolean
+  onLongRestChange: (v: boolean) => void
+  singleMonth: boolean
+  onSingleMonthChange: (v: boolean) => void
 }) {
+  const activeCount = [longRest, singleMonth].filter(Boolean).length
   return (
     <div className="mt-8 rounded-[20px] border border-border/60 bg-card p-4 md:p-5">
       <div className="flex flex-wrap items-center gap-3 md:gap-5">
@@ -141,12 +167,90 @@ function Toolbar({
         </div>
 
         <div className="ml-auto flex gap-2">
-          <Button variant="outline" className="gap-2 rounded-xl">
-            <SlidersHorizontal className="size-4" />
-            Настроить
-          </Button>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="gap-2 rounded-xl">
+                <SlidersHorizontal className="size-4" />
+                Настроить
+                {activeCount > 0 && (
+                  <span className="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-primary/15 text-[11px] font-semibold text-primary">
+                    {activeCount}
+                  </span>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="w-full max-w-[380px] sm:max-w-[420px]"
+            >
+              <SheetHeader>
+                <SheetTitle className="text-[17px]">Параметры подбора</SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 flex flex-col gap-5 px-4 pb-6">
+                <SettingCheckbox
+                  id="long-rest"
+                  label="Искать длинные периоды отдыха"
+                  checked={longRest}
+                  onCheckedChange={onLongRestChange}
+                  tooltip="Ищем варианты, где отдых получится длиннее — за счёт склейки отпуска с праздниками и выходными. Короткие «компактные» варианты уходят ниже в списке."
+                />
+                <SettingCheckbox
+                  id="single-month"
+                  label="Показывать только даты внутри одного месяца"
+                  checked={singleMonth}
+                  onCheckedChange={onSingleMonthChange}
+                  tooltip="Отсекаются варианты, которые переходят через границу месяца (например, «конец апреля — начало мая»). Остаются только периоды внутри одного календарного месяца."
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
+    </div>
+  )
+}
+
+function SettingCheckbox({
+  id,
+  label,
+  checked,
+  onCheckedChange,
+  tooltip,
+}: {
+  id: string
+  label: string
+  checked: boolean
+  onCheckedChange: (v: boolean) => void
+  tooltip: string
+}) {
+  return (
+    <div className="flex items-start gap-3 text-[14px]">
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(v) => onCheckedChange(v === true)}
+        className="mt-0.5"
+      />
+      <label
+        htmlFor={id}
+        className="flex select-none items-center gap-1.5 leading-snug text-foreground"
+      >
+        {label}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              aria-label="Подробнее"
+              className="inline-flex text-muted-foreground transition hover:text-foreground"
+            >
+              <HelpCircle className="size-3.5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-[280px] text-[12px]">
+            {tooltip}
+          </TooltipContent>
+        </Tooltip>
+      </label>
     </div>
   )
 }
@@ -355,7 +459,7 @@ function RecommendationsCard({
                 type="button"
                 onClick={() => onSelect(isActive ? null : rec.id)}
                 className={cn(
-                  'flex h-[56px] w-full items-center gap-3 rounded-2xl border px-3 text-left transition',
+                  'flex min-h-[56px] w-full items-center gap-3 rounded-2xl border px-3 py-2 text-left transition',
                   isActive
                     ? 'border-primary/40 bg-primary/10'
                     : 'border-border/60 bg-white hover:border-primary/30',
@@ -372,11 +476,19 @@ function RecommendationsCard({
                   {rec.id}
                 </span>
                 <span className="min-w-0 flex-1 leading-tight">
-                  <span className="block truncate text-[14px] font-medium text-foreground">
-                    {rec.range}
+                  <span className="flex items-center gap-2">
+                    <span className="truncate text-[14px] font-medium text-foreground">
+                      {rec.range}
+                    </span>
+                    {rec.best && (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/15 px-2 py-[1px] text-[10px] font-medium uppercase tracking-wider text-primary">
+                        <Sparkles className="size-2.5" />
+                        Лучший
+                      </span>
+                    )}
                   </span>
-                  <span className="mt-0.5 block truncate text-[12px] text-muted-foreground tabular-nums">
-                    {rec.rest}&nbsp;дней · ×{rec.efficiency.toFixed(2)}
+                  <span className="mt-0.5 block text-[12px] text-muted-foreground tabular-nums">
+                    {rec.vacDays}&nbsp;дн. отпуска → {rec.rest}&nbsp;дн. отдыха
                   </span>
                 </span>
               </button>
@@ -414,19 +526,21 @@ function Legend({ className }: { className?: string }) {
   )
 }
 
-function WorstMonthsCard() {
+const YEAR_INSIGHTS_2026 = [
+  'Январь «съедает» отпуск: 8 праздничных дней уже дают длинные выходные, брать отпуск здесь невыгодно.',
+  'Май даёт лучшие связки: 1 и 9 мая ложатся удачно — 5 дней отпуска превращаются в 9 дней подряд.',
+  'В феврале мало рабочих дней — средний день отпуска «стоит» больше, чем в длинных месяцах.',
+]
+
+function InsightsCard() {
   return (
     <div className="rounded-[24px] border border-border/60 bg-card p-5 md:p-6">
-      <h3 className="text-[15px] font-semibold">Месяцы, где отпуск невыгоден</h3>
-      <ul className="mt-3 space-y-2 text-[14px] text-muted-foreground">
-        {WORST_MONTHS.map((w) => (
-          <li key={w.month} className="flex gap-2">
-            <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-rose-400/70" />
-            <span>
-              <span className="font-medium text-foreground">{w.month}</span>
-              {' — '}
-              {w.reason}
-            </span>
+      <h3 className="text-[15px] font-semibold">На что обратить внимание</h3>
+      <ul className="mt-3 flex flex-col gap-2.5 text-[14px] leading-relaxed text-foreground/85">
+        {YEAR_INSIGHTS_2026.map((text, i) => (
+          <li key={i} className="flex gap-2">
+            <span className="mt-[7px] size-1.5 shrink-0 rounded-full bg-primary" />
+            <span>{text}</span>
           </li>
         ))}
       </ul>
