@@ -66,8 +66,7 @@ export function VacationPage() {
           />
         </div>
 
-        <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-          <Legend />
+        <div className="mt-6">
           <WorstMonthsCard />
         </div>
       </div>
@@ -80,10 +79,10 @@ function VacationHeader() {
     <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
         <h1 className="text-[32px] font-semibold tracking-tight md:text-[40px]">
-          Когда брать отпуск
+          Выгодный отпуск 2026
         </h1>
-        <p className="mt-2 text-[15px] text-muted-foreground md:text-base">
-          Подсветим даты, когда отпуск максимально склеится с праздниками и выходными.
+        <p className="mt-2 max-w-[620px] text-[15px] leading-relaxed text-muted-foreground md:text-base">
+          Берите меньше дней — отдыхайте дольше. Подберём даты, где отпуск склеится с&nbsp;выходными.
         </p>
       </div>
       <Button variant="outline" className="gap-2 rounded-xl">
@@ -188,6 +187,8 @@ function CalendarCard({
           <ChevronRight className="size-5" />
         </button>
       </div>
+
+      <Legend className="mt-4" />
 
       <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[11px] uppercase tracking-wider text-muted-foreground">
         {WEEKDAYS.map((d) => (
@@ -354,7 +355,7 @@ function RecommendationsCard({
                 type="button"
                 onClick={() => onSelect(isActive ? null : rec.id)}
                 className={cn(
-                  'flex h-[64px] w-full items-center gap-4 rounded-2xl border px-4 text-left transition',
+                  'flex h-[56px] w-full items-center gap-3 rounded-2xl border px-3 text-left transition',
                   isActive
                     ? 'border-primary/40 bg-primary/10'
                     : 'border-border/60 bg-white hover:border-primary/30',
@@ -362,7 +363,7 @@ function RecommendationsCard({
               >
                 <span
                   className={cn(
-                    'grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold tabular-nums',
+                    'grid size-7 shrink-0 place-items-center rounded-full text-[13px] font-semibold tabular-nums',
                     isActive
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted text-muted-foreground',
@@ -370,12 +371,12 @@ function RecommendationsCard({
                 >
                   {rec.id}
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15px] font-medium text-foreground">
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block truncate text-[14px] font-medium text-foreground">
                     {rec.range}
                   </span>
-                  <span className="mt-0.5 block truncate text-[13px] text-muted-foreground tabular-nums">
-                    {rec.rest} дней отдыха · выгода ×{rec.efficiency.toFixed(2)}
+                  <span className="mt-0.5 block truncate text-[12px] text-muted-foreground tabular-nums">
+                    {rec.rest}&nbsp;дней · ×{rec.efficiency.toFixed(2)}
                   </span>
                 </span>
               </button>
@@ -387,7 +388,7 @@ function RecommendationsCard({
   )
 }
 
-function Legend() {
+function Legend({ className }: { className?: string }) {
   const items = [
     { color: 'bg-white border', label: 'Рабочий' },
     { color: 'bg-rose-50/60', label: 'Выходной' },
@@ -397,16 +398,18 @@ function Legend() {
     { color: 'bg-primary/15 border-primary/40', label: 'Топ-вариант' },
   ]
   return (
-    <div className="rounded-[24px] border border-border/60 bg-card p-5 md:p-6">
-      <h3 className="text-[15px] font-semibold">Легенда</h3>
-      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-muted-foreground">
-        {items.map((it) => (
-          <span key={it.label} className="inline-flex items-center gap-2">
-            <span className={cn('size-3 rounded', it.color)} />
-            {it.label}
-          </span>
-        ))}
-      </div>
+    <div
+      className={cn(
+        'flex flex-wrap gap-x-4 gap-y-2 text-[12px] text-muted-foreground',
+        className,
+      )}
+    >
+      {items.map((it) => (
+        <span key={it.label} className="inline-flex items-center gap-1.5">
+          <span className={cn('size-3 rounded', it.color)} />
+          {it.label}
+        </span>
+      ))}
     </div>
   )
 }
@@ -414,7 +417,7 @@ function Legend() {
 function WorstMonthsCard() {
   return (
     <div className="rounded-[24px] border border-border/60 bg-card p-5 md:p-6">
-      <h3 className="text-[15px] font-semibold">Не самые выгодные месяцы</h3>
+      <h3 className="text-[15px] font-semibold">Месяцы, где отпуск невыгоден</h3>
       <ul className="mt-3 space-y-2 text-[14px] text-muted-foreground">
         {WORST_MONTHS.map((w) => (
           <li key={w.month} className="flex gap-2">
