@@ -29,9 +29,13 @@ export function SiteHeader() {
     <header className="sticky top-0 z-20 border-b border-border/60 bg-background/80 backdrop-blur">
       <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 md:h-[80px] md:px-6">
         <Link href="/" className="flex items-center gap-3">
-          <span className="grid size-9 place-items-center rounded-[10px] bg-primary text-primary-foreground font-semibold">
-            ₽
-          </span>
+          <img
+            src="/naruki-logo.png"
+            alt="На руки"
+            className="size-9 rounded-[10px] object-contain"
+            loading="eager"
+            decoding="async"
+          />
           <span className="text-[17px] font-semibold tracking-tight">
             На&nbsp;руки
           </span>
@@ -73,9 +77,11 @@ export function SiteHeader() {
           <SheetContent side="right" className="w-[84%] max-w-[320px] p-0">
             <SheetHeader className="border-b border-border/60 px-6 py-5">
               <SheetTitle className="flex items-center gap-3 text-left text-[17px]">
-                <span className="grid size-9 place-items-center rounded-[10px] bg-primary text-primary-foreground font-semibold">
-                  ₽
-                </span>
+                <img
+                  src="/naruki-logo.png"
+                  alt="На руки"
+                  className="size-9 rounded-[10px] object-contain"
+                />
                 На&nbsp;руки
               </SheetTitle>
             </SheetHeader>
