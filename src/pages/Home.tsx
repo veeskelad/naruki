@@ -1,188 +1,282 @@
+import type { ReactNode } from 'react'
 import { Link } from 'wouter'
-import { ArrowRight, Lock } from 'lucide-react'
+import {
+  ArrowRight,
+  CalendarClock,
+  Lock,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
+import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 export function HomePage() {
   return (
     <PageShell>
-      <Hero />
-      <TwoUpPreview />
+      <section className="mx-auto max-w-7xl px-4 pt-12 pb-14 md:px-6 md:pt-20 md:pb-20">
+        <div className="md:grid md:grid-cols-12 md:items-stretch md:gap-8 lg:gap-12">
+          <div className="flex flex-col md:col-span-8">
+            <Hero />
+            <div className="mt-10 md:mt-14">
+              <VacationPreviewCard />
+            </div>
+          </div>
+          <div className="mt-10 md:col-span-4 md:mt-0 md:flex md:flex-col">
+            <SalaryPreviewCard className="md:hidden" />
+            <SalarySidePanel className="hidden md:flex md:h-full" />
+          </div>
+        </div>
+      </section>
       <HowItWorks />
     </PageShell>
   )
 }
 
-/* ── HERO ───────────────────────────────────────────── */
-
 function Hero() {
   return (
-    <section className="mx-auto max-w-7xl px-4 pt-14 pb-16 md:px-6 md:pt-20 md:pb-24">
-      <div className="max-w-[720px]">
-        <h1 className="text-[40px] font-semibold leading-[1.05] tracking-tight text-foreground sm:text-[56px] md:text-[64px]">
-          Планируйте отпуск и&nbsp;доход&nbsp;— без регистрации
-        </h1>
-        <p className="mt-6 max-w-[560px] text-[17px] leading-relaxed text-muted-foreground md:text-lg">
-          Календарь выходных и&nbsp;расчёт выплат. Всё считается в&nbsp;браузере.
-        </p>
-        <div className="mt-4 inline-flex items-center gap-1.5 text-[13px] text-muted-foreground">
-          <Lock className="size-3.5" strokeWidth={1.8} />
-          Ничего не&nbsp;уходит на&nbsp;сервер
-        </div>
+    <div className="max-w-[640px]">
+      <h1
+        className="reveal reveal--title font-display text-[34px] font-bold leading-[1.08] tracking-tight text-foreground sm:text-[44px] md:text-[56px] lg:text-[68px]"
+        style={{ maxWidth: '14ch' }}
+      >
+        Планируйте отпуск и&nbsp;выплаты
+      </h1>
+      <p className="reveal reveal--lede mt-5 max-w-[420px] text-[15px] leading-relaxed text-muted-foreground sm:text-[16px] md:mt-6 md:max-w-[520px] md:text-[18px]">
+        Производственный календарь и&nbsp;расчёт выплат&nbsp;— прямо в&nbsp;браузере.
+      </p>
+      <div className="reveal reveal--lede mt-4 inline-flex items-center gap-1.5 rounded-full border border-border/70 px-3 py-1.5 text-[12px] text-muted-foreground md:text-[13px]">
+        <Lock className="size-3.5" strokeWidth={2} />
+        Без регистрации и&nbsp;без сохранения данных
       </div>
-    </section>
+    </div>
   )
 }
 
-/* ── TWO-UP PREVIEW (entry points) ──────────────────── */
+type StripCell = 'off' | 'vac'
 
-function TwoUpPreview() {
-  return (
-    <section className="mx-auto max-w-7xl px-4 pb-16 md:px-6 md:pb-20">
-      <div className="grid gap-5 md:grid-cols-2 md:gap-6">
-        <VacationPreviewCard />
-        <SalaryPreviewCard />
-      </div>
-    </section>
-  )
-}
-
-/* ── VACATION PREVIEW CARD ──────────────────────────── */
-
-type StripCell = 'wknd' | 'holi' | 'vac'
-
-// Мини-полоска из 9 квадратиков: [wknd wknd holi vac×5 wknd]
 const VAC_STRIP: StripCell[] = [
-  'wknd', 'wknd', 'holi',
+  'off', 'off',
   'vac', 'vac', 'vac', 'vac', 'vac',
-  'wknd',
+  'off', 'off',
 ]
 
 function VacationPreviewCard() {
   return (
-    <Link
-      href="/vacation"
-      className="group relative flex h-full min-h-[240px] flex-col rounded-[24px] border border-border/60 bg-card p-6 transition hover:border-primary/40 md:min-h-[300px] md:p-7"
-    >
-      <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        Отпуск 2026
+    <article className="flex h-full min-h-[340px] flex-col rounded-[24px] border border-border/70 bg-card p-6 md:min-h-[420px] md:p-8">
+      <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+        Когда брать отпуск
       </div>
-      <div className="mt-2 text-[22px] font-semibold leading-[1.15] tracking-tight text-foreground md:text-[24px]">
-        5&nbsp;дней отпуска&nbsp;→&nbsp;9&nbsp;дней отдыха
+      <div className="mt-3 font-display text-[24px] font-bold leading-[1.15] tracking-tight text-foreground md:text-[28px]">
+        5&nbsp;дней отпуска
+        <br />
+        →&nbsp;9&nbsp;дней отдыха подряд
       </div>
-
-      {/* Mini-visual strip */}
-      <div className="mt-5 flex gap-1 md:gap-[4px]">
-        {VAC_STRIP.slice(0, 9).map((c, i) => (
-          <StripSquare key={i} kind={c} className="hidden md:block" />
-        ))}
-        {/* Mobile: first 7 squares only */}
-        {VAC_STRIP.slice(0, 7).map((c, i) => (
-          <StripSquare key={`m${i}`} kind={c} className="md:hidden" />
-        ))}
+      <div className="mt-2 text-[13px] text-muted-foreground md:text-[14px]">
+        Выходные + отпуск + выходные
       </div>
 
-      <p className="mt-5 text-[13px] leading-relaxed text-muted-foreground md:text-[14px]">
-        Подберём даты, где отпуск склеится с&nbsp;праздниками.
+      <div className="mt-7">
+        <div className="grid grid-cols-9 gap-1 md:gap-1.5">
+          {VAC_STRIP.map((c, i) => (
+            <StripSquare key={i} kind={c} />
+          ))}
+        </div>
+        <div className="mt-2.5 grid grid-cols-9 gap-1 text-center text-[10px] leading-tight text-muted-foreground md:gap-1.5 md:text-[11px]">
+          <span className="col-span-2">Выходные<br />и&nbsp;праздники</span>
+          <span className="col-span-5">5&nbsp;дней отпуска</span>
+          <span className="col-span-2">Выходные<br />и&nbsp;праздники</span>
+        </div>
+      </div>
+
+      <p className="mt-6 text-[14px] leading-relaxed text-muted-foreground md:text-[15px]">
+        Подберём даты, чтобы на&nbsp;те же дни отпуска получилось больше отдыха.
       </p>
 
-      <div className="mt-auto inline-flex items-center gap-1.5 pt-6 text-[14px] font-medium text-primary">
-        Открыть календарь
-        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+      <div className="mt-auto pt-8">
+        <Button asChild size="lg" className="w-full sm:w-auto">
+          <Link href="/vacation">
+            Подобрать даты
+            <ArrowRight />
+          </Link>
+        </Button>
       </div>
-    </Link>
+    </article>
   )
 }
 
-function StripSquare({ kind, className }: { kind: StripCell; className?: string }) {
+function StripSquare({ kind }: { kind: StripCell }) {
   return (
     <span
       className={cn(
-        'block size-5 rounded-[5px]',
-        kind === 'wknd' && 'bg-muted/60 ring-1 ring-border/60',
-        kind === 'holi' && 'bg-rose-200',
+        'block aspect-square w-full rounded-[6px]',
+        kind === 'off' && 'bg-primary/15',
         kind === 'vac' && 'bg-primary',
-        className,
       )}
       aria-hidden
     />
   )
 }
 
-/* ── SALARY PREVIEW CARD ────────────────────────────── */
-
-function SalaryPreviewCard() {
-  // Полоска: primary 87% (на руки) + rose-300 13% (налоги) = 200 000 ₽ gross.
-  const netPct = 87
-  const taxPct = 100 - netPct
-
+function SalaryPreviewCard({ className }: { className?: string }) {
   return (
-    <Link
-      href="/salary"
-      className="group relative flex h-full min-h-[240px] flex-col rounded-[24px] border border-border/60 bg-card p-6 transition hover:border-primary/40 md:min-h-[300px] md:p-7"
+    <article
+      className={cn(
+        'flex h-full min-h-[340px] flex-col rounded-[24px] border border-border/70 bg-card p-6 md:min-h-[400px] md:p-8',
+        className,
+      )}
     >
-      <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        Зарплата 2026
+      <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+        Когда и&nbsp;сколько придёт
       </div>
-      <div className="mt-2 text-[22px] font-semibold leading-[1.15] tracking-tight text-foreground md:text-[24px]">
-        174&nbsp;000&nbsp;₽ на&nbsp;руки
+      <div className="mt-3 font-display text-[24px] font-bold leading-[1.15] tracking-tight text-foreground md:text-[28px] tabular">
+        100&nbsp;000&nbsp;₽ на&nbsp;руки
+        <br />
+        в&nbsp;месяц
       </div>
 
-      {/* Mini-visual bar */}
-      <div className="mt-5 w-full max-w-[240px]">
-        <div className="flex h-2 overflow-hidden rounded-full">
-          <span
-            className="block h-full bg-primary"
-            style={{ width: `${netPct}%` }}
-          />
-          <span
-            className="block h-full bg-rose-300"
-            style={{ width: `${taxPct}%` }}
-          />
-        </div>
-        <div className="mt-1.5 flex justify-between text-[11px] tabular-nums text-muted-foreground">
-          <span>0&nbsp;₽</span>
-          <span>174&nbsp;000&nbsp;₽</span>
-          <span>200&nbsp;000&nbsp;₽</span>
+      <div className="mt-7 space-y-2">
+        <PayoutRow label="Аванс" date="25 числа" amount="46 000 ₽" />
+        <PayoutRow label="Зарплата" date="10 числа" amount="54 000 ₽" />
+        <div className="flex items-baseline justify-between border-t border-border/70 pt-2.5">
+          <span className="text-[12px] text-muted-foreground md:text-[13px]">
+            Итого за&nbsp;месяц
+          </span>
+          <span className="font-display text-[16px] font-bold tabular text-foreground md:text-[17px]">
+            100&nbsp;000&nbsp;₽
+          </span>
         </div>
       </div>
 
-      <p className="mt-5 text-[13px] leading-relaxed text-muted-foreground md:text-[14px]">
-        из&nbsp;200&nbsp;000&nbsp;₽ до&nbsp;налогов. Посчитаем для ТК, ИП и&nbsp;самозанятых.
+      <p className="mt-6 text-[14px] leading-relaxed text-muted-foreground md:text-[15px]">
+        Покажем даты выплат и&nbsp;сумму на&nbsp;руки по&nbsp;месяцам.
       </p>
 
-      <div className="mt-auto inline-flex items-center gap-1.5 pt-6 text-[14px] font-medium text-primary">
-        Открыть калькулятор
-        <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+      <div className="mt-auto pt-8">
+        <Button asChild size="lg" className="w-full sm:w-auto">
+          <Link href="/salary">
+            Посчитать выплаты
+            <ArrowRight />
+          </Link>
+        </Button>
       </div>
-    </Link>
+    </article>
   )
 }
 
-/* ── HOW IT WORKS ───────────────────────────────────── */
+function SalarySidePanel({ className }: { className?: string }) {
+  return (
+    <aside
+      className={cn(
+        'flex-col rounded-[24px] border border-border/70 bg-card p-6 md:p-7',
+        className,
+      )}
+    >
+      <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+        Зарплата
+      </div>
+      <div className="mt-3 font-display text-[22px] font-bold leading-[1.15] tracking-tight text-foreground lg:text-[24px]">
+        Что покажет калькулятор
+      </div>
+
+      <ul className="mt-7 space-y-5">
+        <Advantage
+          icon={<Wallet className="size-4.5" strokeWidth={1.8} />}
+          title="Сколько на руки"
+          body="По ТК, НПД, ИП УСН и любой ставке."
+        />
+        <Advantage
+          icon={<CalendarClock className="size-4.5" strokeWidth={1.8} />}
+          title="Когда приходят выплаты"
+          body="Даты аванса и зарплаты — по месяцам."
+        />
+        <Advantage
+          icon={<TrendingUp className="size-4.5" strokeWidth={1.8} />}
+          title="Помесячный и годовой обзор"
+          body="Таблица и график выплат на весь год."
+        />
+      </ul>
+
+      <div className="mt-auto pt-8">
+        <Button asChild size="lg" className="w-full">
+          <Link href="/salary">
+            Посчитать выплаты
+            <ArrowRight />
+          </Link>
+        </Button>
+      </div>
+    </aside>
+  )
+}
+
+function Advantage({
+  icon,
+  title,
+  body,
+}: {
+  icon: ReactNode
+  title: string
+  body: string
+}) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <div className="text-[15px] font-semibold text-foreground">
+          {title}
+        </div>
+        <div className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground lg:text-[14px]">
+          {body}
+        </div>
+      </div>
+    </li>
+  )
+}
+
+function PayoutRow({ label, date, amount }: { label: string; date: string; amount: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <span className="flex min-w-0 items-baseline gap-2">
+        <span className="text-[14px] font-medium text-foreground md:text-[15px]">
+          {label}
+        </span>
+        <span className="text-[12px] text-muted-foreground md:text-[13px]">
+          · {date}
+        </span>
+      </span>
+      <span className="font-display text-[15px] font-bold tabular text-foreground md:text-[16px]">
+        {amount}
+      </span>
+    </div>
+  )
+}
 
 function HowItWorks() {
   const steps = [
-    'Вводите параметры — за 30 секунд',
+    'Вводите параметры',
     'Смотрите расчёт — сразу в браузере',
-    'Скачиваете в Excel — чтобы сохранить',
+    'Сохраняете в Excel',
   ]
 
   return (
     <section className="mx-auto max-w-7xl px-4 pb-24 md:px-6 md:pb-32">
-      <h2 className="text-[22px] font-semibold tracking-tight text-foreground md:text-[28px]">
+      <h2 className="font-display text-[24px] font-bold tracking-tight text-foreground md:text-[32px]">
         Как это работает
       </h2>
-      <ol className="mt-6 flex flex-col gap-3 md:mt-8 md:flex-row md:gap-8">
+      <ol className="mt-8 grid gap-8 md:mt-12 md:grid-cols-3 md:gap-10">
         {steps.map((s, i) => (
-          <li
-            key={i}
-            className="flex items-baseline gap-3 text-[15px] leading-relaxed text-foreground md:flex-1"
-          >
-            <span className="text-[13px] tabular-nums text-muted-foreground">
-              {['①', '②', '③'][i]}
+          <li key={i} className="flex flex-col gap-4">
+            <span
+              className="font-display text-[64px] font-bold leading-none tracking-tight text-primary/25 md:text-[88px]"
+              aria-hidden
+            >
+              {String(i + 1).padStart(2, '0')}
             </span>
-            <span>{s}</span>
+            <span className="text-[16px] leading-relaxed text-foreground md:text-[17px]">
+              {s}
+            </span>
           </li>
         ))}
       </ol>

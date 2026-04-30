@@ -3,7 +3,6 @@ import { PageShell } from '@/components/layout/PageShell'
 import { HomePage } from '@/pages/Home'
 import { VacationPage } from '@/pages/Vacation'
 import { SalaryPage } from '@/pages/Salary'
-import { FontsPreviewPage } from '@/pages/FontsPreview'
 
 export default function App() {
   return (
@@ -11,7 +10,6 @@ export default function App() {
       <Route path="/" component={HomePage} />
       <Route path="/vacation" component={VacationPage} />
       <Route path="/salary" component={SalaryPage} />
-      <Route path="/fonts" component={FontsPreviewPage} />
       <Route component={NotFound} />
     </Switch>
   )

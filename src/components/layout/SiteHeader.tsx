@@ -26,17 +26,20 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border/60 bg-background/80 backdrop-blur">
-      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 md:h-[80px] md:px-6">
-        <Link href="/" className="flex items-center gap-3">
+    <header className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur">
+      <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 md:h-[88px] md:px-6">
+        <Link
+          href="/"
+          className="flex min-w-0 shrink items-center gap-3"
+        >
           <img
             src="/naruki-logo.png"
             alt="На руки"
-            className="size-9 rounded-[10px] object-contain"
+            className="h-14 w-auto shrink-0 md:h-[60px]"
             loading="eager"
             decoding="async"
           />
-          <span className="text-[17px] font-semibold tracking-tight">
+          <span className="font-display text-[19px] font-bold tracking-tight md:text-[22px]">
             На&nbsp;руки
           </span>
         </Link>
@@ -57,7 +60,7 @@ export function SiteHeader() {
               >
                 {item.label}
                 {active && (
-                  <span className="absolute -bottom-[26px] left-0 right-0 h-[2px] rounded-full bg-primary" />
+                  <span className="absolute -bottom-[30px] left-0 right-0 h-[2px] rounded-full bg-primary" />
                 )}
               </Link>
             )
@@ -76,13 +79,15 @@ export function SiteHeader() {
           </SheetTrigger>
           <SheetContent side="right" className="w-[84%] max-w-[320px] p-0">
             <SheetHeader className="border-b border-border/60 px-6 py-5">
-              <SheetTitle className="flex items-center gap-3 text-left text-[17px]">
+              <SheetTitle className="flex items-center gap-3 text-left">
                 <img
                   src="/naruki-logo.png"
                   alt="На руки"
-                  className="size-9 rounded-[10px] object-contain"
+                  className="h-14 w-auto"
                 />
-                На&nbsp;руки
+                <span className="font-display text-[20px] font-bold tracking-tight">
+                  На&nbsp;руки
+                </span>
               </SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col p-3">
