@@ -33,7 +33,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 md:h-[88px] md:px-6">
         <Link
           href="/"
-          className="flex min-w-0 shrink items-center gap-2.5 md:gap-3"
+          className="flex min-w-0 shrink items-center gap-3"
         >
           <img
             src="/naruki-logo.png"
@@ -42,7 +42,7 @@ export function SiteHeader() {
             loading="eager"
             decoding="async"
           />
-          <span className="relative top-px font-display text-[19px] font-medium leading-none tracking-[-0.01em] md:text-[22px]">
+          <span className="font-display text-[19px] font-normal leading-none tracking-[-0.01em] md:text-[22px]">
             На&nbsp;руки
           </span>
         </Link>
@@ -58,7 +58,7 @@ export function SiteHeader() {
                   'relative transition-colors',
                   active
                     ? 'text-foreground'
-                    : 'text-foreground/75 hover:text-foreground',
+                    : 'text-foreground/85 hover:text-foreground',
                 )}
               >
                 {item.label}
