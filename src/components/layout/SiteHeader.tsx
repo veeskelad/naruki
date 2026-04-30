@@ -2,25 +2,28 @@ import { useState } from 'react'
 import { Link, useLocation } from 'wouter'
 import { Menu } from 'lucide-react'
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
-const NAV = [
+const DESKTOP_NAV = [
   { href: '/vacation', label: 'Отпуск' },
   { href: '/salary', label: 'Зарплата' },
   { href: '/about', label: 'О сервисе' },
+] as const
+
+const MOBILE_NAV = [
+  { href: '/vacation', label: 'Отпуск' },
+  { href: '/salary', label: 'Зарплата' },
 ] as const
 
 export function SiteHeader() {
   const [location, navigate] = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
-  const go = (href: string) => {
+  const goMobile = (href: string) => {
     setMobileOpen(false)
     navigate(href)
   }
@@ -30,7 +33,7 @@ export function SiteHeader() {
       <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 md:h-[88px] md:px-6">
         <Link
           href="/"
-          className="flex min-w-0 shrink items-center gap-3"
+          className="flex min-w-0 shrink items-center gap-2.5 md:gap-3"
         >
           <img
             src="/naruki-logo.png"
@@ -39,13 +42,13 @@ export function SiteHeader() {
             loading="eager"
             decoding="async"
           />
-          <span className="font-display text-[19px] font-bold tracking-tight md:text-[22px]">
+          <span className="relative top-px font-display text-[19px] font-medium leading-none tracking-[-0.01em] md:text-[22px]">
             На&nbsp;руки
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-8 text-[15px] md:flex">
-          {NAV.map((item) => {
+        <nav className="hidden items-center gap-8 text-[15px] font-medium md:flex">
+          {DESKTOP_NAV.map((item) => {
             const active = location === item.href
             return (
               <Link
@@ -55,7 +58,7 @@ export function SiteHeader() {
                   'relative transition-colors',
                   active
                     ? 'text-foreground'
-                    : 'text-muted-foreground hover:text-foreground',
+                    : 'text-foreground/75 hover:text-foreground',
                 )}
               >
                 {item.label}
@@ -67,54 +70,48 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
+        <Popover open={mobileOpen} onOpenChange={setMobileOpen}>
+          <PopoverTrigger asChild>
             <button
               type="button"
               aria-label="Меню"
-              className="grid size-10 place-items-center rounded-xl border border-border/60 text-muted-foreground transition hover:text-foreground md:hidden"
+              aria-expanded={mobileOpen}
+              className="grid size-10 place-items-center rounded-xl border border-border/60 text-foreground/75 transition hover:text-foreground md:hidden"
             >
               <Menu className="size-5" />
             </button>
-          </SheetTrigger>
-          <SheetContent side="right" className="w-[84%] max-w-[320px] p-0">
-            <SheetHeader className="border-b border-border/60 px-6 py-5">
-              <SheetTitle className="flex items-center gap-3 text-left">
-                <img
-                  src="/naruki-logo.png"
-                  alt="На руки"
-                  className="h-14 w-auto"
-                />
-                <span className="font-display text-[20px] font-bold tracking-tight">
-                  На&nbsp;руки
-                </span>
-              </SheetTitle>
-            </SheetHeader>
-            <nav className="flex flex-col p-3">
-              {NAV.map((item) => {
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            sideOffset={10}
+            className="w-[200px] p-2 md:hidden"
+          >
+            <ul className="flex flex-col gap-1">
+              {MOBILE_NAV.map((item) => {
                 const active = location === item.href
                 return (
-                  <button
-                    key={item.href}
-                    type="button"
-                    onClick={() => go(item.href)}
-                    className={cn(
-                      'flex items-center justify-between rounded-xl px-4 py-3 text-left text-[16px] transition',
-                      active
-                        ? 'bg-primary/10 text-primary font-medium'
-                        : 'text-foreground hover:bg-muted/60',
-                    )}
-                  >
-                    {item.label}
-                    <span aria-hidden className="text-muted-foreground">
-                      →
-                    </span>
-                  </button>
+                  <li key={item.href}>
+                    <button
+                      type="button"
+                      onClick={() => goMobile(item.href)}
+                      className={cn(
+                        'flex w-full items-center justify-between rounded-xl px-3.5 py-3 text-left text-[15px] font-medium transition-colors',
+                        active
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-foreground hover:bg-muted/60',
+                      )}
+                    >
+                      {item.label}
+                      <span aria-hidden className="text-muted-foreground">
+                        →
+                      </span>
+                    </button>
+                  </li>
                 )
               })}
-            </nav>
-          </SheetContent>
-        </Sheet>
+            </ul>
+          </PopoverContent>
+        </Popover>
       </div>
     </header>
   )
