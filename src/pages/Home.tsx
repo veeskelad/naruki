@@ -2,9 +2,9 @@ import type { ReactNode } from 'react'
 import { Link } from 'wouter'
 import {
   ArrowRight,
-  CalendarClock,
+  BarChart3,
+  CalendarDays,
   Lock,
-  TrendingUp,
   Wallet,
 } from 'lucide-react'
 import { PageShell } from '@/components/layout/PageShell'
@@ -14,20 +14,24 @@ import { cn } from '@/lib/utils'
 export function HomePage() {
   return (
     <PageShell>
-      <section className="mx-auto max-w-7xl px-4 pt-12 pb-14 md:px-6 md:pt-20 md:pb-20">
-        <div className="md:grid md:grid-cols-12 md:items-stretch md:gap-8 lg:gap-12">
-          <div className="flex flex-col md:col-span-8">
+      <section className="mx-auto max-w-7xl px-4 pt-12 pb-10 md:px-6 md:pt-20 md:pb-14">
+        <div className="md:grid md:grid-cols-12 md:items-start md:gap-10 lg:gap-14">
+          <div className="md:col-span-7">
             <Hero />
-            <div className="mt-10 md:mt-14">
-              <VacationPreviewCard />
-            </div>
           </div>
-          <div className="mt-10 md:col-span-4 md:mt-0 md:flex md:flex-col">
-            <SalaryPreviewCard className="md:hidden" />
-            <SalarySidePanel className="hidden md:flex md:h-full" />
+          <div className="mt-10 md:col-span-5 md:mt-0">
+            <SupportingBlock className="hidden md:block" />
           </div>
         </div>
       </section>
+
+      <section className="mx-auto max-w-7xl px-4 pb-20 md:px-6 md:pb-24">
+        <div className="grid gap-4 md:grid-cols-2 md:gap-6">
+          <VacationPreviewCard />
+          <SalaryPreviewCard />
+        </div>
+      </section>
+
       <HowItWorks />
     </PageShell>
   )
@@ -53,6 +57,65 @@ function Hero() {
   )
 }
 
+function SupportingBlock({ className }: { className?: string }) {
+  return (
+    <aside
+      className={cn(
+        'rounded-[24px] border border-border/70 bg-card p-6 md:p-7',
+        className,
+      )}
+    >
+      <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+        Что внутри
+      </div>
+      <ul className="mt-5 space-y-5">
+        <Feature
+          icon={<CalendarDays className="size-5" strokeWidth={1.8} />}
+          title="Когда брать отпуск"
+          body="Покажем даты, где на те же дни отпуска получится больше отдыха."
+        />
+        <Feature
+          icon={<Wallet className="size-5" strokeWidth={1.8} />}
+          title="Когда и сколько придёт"
+          body="Покажем даты выплат и сумму на руки по месяцам."
+        />
+        <Feature
+          icon={<BarChart3 className="size-5" strokeWidth={1.8} />}
+          title="Обзор по году"
+          body="Таблица и график помогут сравнить все месяцы."
+        />
+      </ul>
+      <div className="mt-6 border-t border-border/70 pt-4 text-[12px] text-muted-foreground">
+        Все расчёты — прямо в&nbsp;браузере
+      </div>
+    </aside>
+  )
+}
+
+function Feature({
+  icon,
+  title,
+  body,
+}: {
+  icon: ReactNode
+  title: string
+  body: string
+}) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary">
+        {icon}
+      </span>
+      <div className="min-w-0">
+        <div className="text-[15px] font-medium text-foreground">{title}</div>
+        <div className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground">
+          {body}
+        </div>
+      </div>
+    </li>
+  )
+}
+
 type StripCell = 'off' | 'vac'
 
 const VAC_STRIP: StripCell[] = [
@@ -63,7 +126,7 @@ const VAC_STRIP: StripCell[] = [
 
 function VacationPreviewCard() {
   return (
-    <article className="flex h-full min-h-[340px] flex-col rounded-[24px] border border-border/70 bg-card p-6 md:min-h-[420px] md:p-8">
+    <article className="flex h-full min-h-[340px] flex-col rounded-[24px] border border-border/70 bg-card p-6 md:min-h-[400px] md:p-8">
       <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
         Когда брать отпуск
       </div>
@@ -118,14 +181,9 @@ function StripSquare({ kind }: { kind: StripCell }) {
   )
 }
 
-function SalaryPreviewCard({ className }: { className?: string }) {
+function SalaryPreviewCard() {
   return (
-    <article
-      className={cn(
-        'flex h-full min-h-[340px] flex-col rounded-[24px] border border-border/70 bg-card p-6 md:min-h-[400px] md:p-8',
-        className,
-      )}
-    >
+    <article className="flex h-full min-h-[340px] flex-col rounded-[24px] border border-border/70 bg-card p-6 md:min-h-[400px] md:p-8">
       <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
         Когда и&nbsp;сколько придёт
       </div>
@@ -161,77 +219,6 @@ function SalaryPreviewCard({ className }: { className?: string }) {
         </Button>
       </div>
     </article>
-  )
-}
-
-function SalarySidePanel({ className }: { className?: string }) {
-  return (
-    <aside
-      className={cn(
-        'flex-col rounded-[24px] border border-border/70 bg-card p-6 md:p-7',
-        className,
-      )}
-    >
-      <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-        Зарплата
-      </div>
-      <div className="mt-3 font-display text-[22px] font-bold leading-[1.15] tracking-tight text-foreground lg:text-[24px]">
-        Что покажет калькулятор
-      </div>
-
-      <ul className="mt-7 space-y-5">
-        <Advantage
-          icon={<Wallet className="size-4.5" strokeWidth={1.8} />}
-          title="Сколько на руки"
-          body="По ТК, НПД, ИП УСН и любой ставке."
-        />
-        <Advantage
-          icon={<CalendarClock className="size-4.5" strokeWidth={1.8} />}
-          title="Когда приходят выплаты"
-          body="Даты аванса и зарплаты — по месяцам."
-        />
-        <Advantage
-          icon={<TrendingUp className="size-4.5" strokeWidth={1.8} />}
-          title="Помесячный и годовой обзор"
-          body="Таблица и график выплат на весь год."
-        />
-      </ul>
-
-      <div className="mt-auto pt-8">
-        <Button asChild size="lg" className="w-full">
-          <Link href="/salary">
-            Посчитать выплаты
-            <ArrowRight />
-          </Link>
-        </Button>
-      </div>
-    </aside>
-  )
-}
-
-function Advantage({
-  icon,
-  title,
-  body,
-}: {
-  icon: ReactNode
-  title: string
-  body: string
-}) {
-  return (
-    <li className="flex items-start gap-3">
-      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/12 text-primary">
-        {icon}
-      </span>
-      <div className="min-w-0">
-        <div className="text-[15px] font-semibold text-foreground">
-          {title}
-        </div>
-        <div className="mt-0.5 text-[13px] leading-relaxed text-muted-foreground lg:text-[14px]">
-          {body}
-        </div>
-      </div>
-    </li>
   )
 }
 

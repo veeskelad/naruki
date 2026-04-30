@@ -85,6 +85,7 @@ export function SiteHeader() {
             align="end"
             sideOffset={10}
             className="w-[200px] p-2 md:hidden"
+            onOpenAutoFocus={(e) => e.preventDefault()}
           >
             <ul className="flex flex-col gap-1">
               {MOBILE_NAV.map((item) => {
