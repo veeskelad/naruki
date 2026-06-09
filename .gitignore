@@ -55,3 +55,4 @@ public/google*.html
 
 # source design archive — kept locally, not needed for deployment
 naruki.zip
+.vercel
