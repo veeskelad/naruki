@@ -24,3 +24,11 @@
 - Added automated axe coverage; all desktop and mobile WCAG A/AA checks pass.
 - Updated the ExcelJS `uuid` dependency through an override; `npm audit`
   reports zero vulnerabilities and workbook generation remains functional.
+
+## FAQ layout and collapsed-state hotfix
+
+- Restored the source design's `max-w-7xl` 4/8 FAQ grid and 24/32 px heading.
+- Kept FAQ answers force-mounted in prerendered HTML for search indexing.
+- Applied closed-state visibility to the Radix content container.
+- Added desktop/mobile regression coverage for initial collapse, single-item
+  expansion, and column separation.

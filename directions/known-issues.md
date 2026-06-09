@@ -16,3 +16,11 @@
 - **Cause**: The installed ImageIO SVG reader cannot extract these documents.
 - **Solution**: Render the SVG with the installed Playwright Chromium and save
   the exact 1200 x 630 element screenshot as PNG.
+
+### Radix state selector was applied to the wrong element
+- **Error**: Every force-mounted FAQ answer was visible even though each
+  accordion trigger had `aria-expanded="false"`.
+- **Cause**: Radix placed `data-state="closed"` on the content container, while
+  the Tailwind state selector was passed to its inner text wrapper.
+- **Solution**: Expose a container class on the local accordion primitive and
+  apply state-based visibility to the element that owns `data-state`.
