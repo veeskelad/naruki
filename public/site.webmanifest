@@ -1,0 +1,17 @@
+{
+  "name": "На руки",
+  "short_name": "На руки",
+  "description": "Выгодный отпуск и расчёт выплат в России",
+  "lang": "ru-RU",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#fafafa",
+  "theme_color": "#24a171",
+  "icons": [
+    {
+      "src": "/naruki-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

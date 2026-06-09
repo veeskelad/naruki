@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#fafafa"/>
+  <rect x="72" y="72" width="1056" height="486" rx="44" fill="#ffffff" stroke="#dce3e8"/>
+  <text x="110" y="180" font-family="Arial,sans-serif" font-size="32" font-weight="700" fill="#24a171">НА РУКИ · 2026</text>
+  <text x="110" y="300" font-family="Arial,sans-serif" font-size="72" font-weight="700" fill="#151918">Сколько придёт</text>
+  <text x="110" y="385" font-family="Arial,sans-serif" font-size="38" fill="#65727d">НДФЛ · НПД · УСН · даты выплат</text>
+  <text x="110" y="495" font-family="Arial,sans-serif" font-size="58" font-weight="700" fill="#151918">87 000 ₽</text>
+  <rect x="790" y="175" width="245" height="255" rx="28" fill="#e5f6ef"/>
+  <path d="M850 350V275M915 350V225M980 350V295" stroke="#24a171" stroke-width="28" stroke-linecap="round"/>
+</svg>

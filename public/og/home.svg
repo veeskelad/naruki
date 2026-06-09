@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#fafafa"/>
+  <rect x="72" y="72" width="1056" height="486" rx="44" fill="#ffffff" stroke="#dce3e8"/>
+  <circle cx="155" cy="155" r="42" fill="#24a171"/>
+  <text x="155" y="170" text-anchor="middle" font-family="Arial,sans-serif" font-size="44" font-weight="700" fill="#fff">₽</text>
+  <text x="220" y="170" font-family="Arial,sans-serif" font-size="38" font-weight="700" fill="#151918">На руки</text>
+  <text x="110" y="315" font-family="Arial,sans-serif" font-size="70" font-weight="700" fill="#151918">Отпуск и выплаты</text>
+  <text x="110" y="390" font-family="Arial,sans-serif" font-size="34" fill="#65727d">Производственный календарь и расчёт денег</text>
+  <rect x="110" y="445" width="430" height="58" rx="29" fill="#e5f6ef"/>
+  <text x="325" y="483" text-anchor="middle" font-family="Arial,sans-serif" font-size="24" fill="#177a55">Без регистрации и сохранения данных</text>
+</svg>

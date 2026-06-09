@@ -1,0 +1,18 @@
+# Lessons Learned
+
+### Prototype calculations were presented as production logic
+- **Error**: Existing salary and vacation pages imported simplified stubs.
+- **Cause**: The visual prototype and production domain model were mixed.
+- **Solution**: Keep verified constants and pure calculation engines separate
+  from page components and cover threshold behavior with unit tests.
+
+### Client-only routing weakens initial indexability
+- **Error**: The original Vite SPA returned the same empty shell for all URLs.
+- **Cause**: Route content was mounted only after JavaScript execution.
+- **Solution**: Pre-render each public route with Vike and hydrate interactions.
+
+### macOS sips cannot rasterize the social SVG files
+- **Error**: `sips -s format png` returned error 13 for valid SVG artwork.
+- **Cause**: The installed ImageIO SVG reader cannot extract these documents.
+- **Solution**: Render the SVG with the installed Playwright Chromium and save
+  the exact 1200 x 630 element screenshot as PNG.

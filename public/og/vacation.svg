@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#fafafa"/>
+  <rect x="72" y="72" width="1056" height="486" rx="44" fill="#ffffff" stroke="#dce3e8"/>
+  <text x="110" y="180" font-family="Arial,sans-serif" font-size="32" font-weight="700" fill="#24a171">НА РУКИ · КАЛЕНДАРЬ 2026</text>
+  <text x="110" y="300" font-family="Arial,sans-serif" font-size="70" font-weight="700" fill="#151918">Выгодный отпуск</text>
+  <text x="110" y="390" font-family="Arial,sans-serif" font-size="38" fill="#65727d">7 дней отпуска → 20 дней отдыха</text>
+  <g transform="translate(765 165)">
+    <rect width="280" height="285" rx="28" fill="#fff" stroke="#dce3e8" stroke-width="3"/>
+    <rect width="280" height="68" rx="28" fill="#24a171"/>
+    <g fill="#e5f6ef">
+      <rect x="30" y="95" width="42" height="42" rx="8"/><rect x="88" y="95" width="42" height="42" rx="8"/>
+      <rect x="146" y="95" width="42" height="42" rx="8"/><rect x="204" y="95" width="42" height="42" rx="8"/>
+      <rect x="30" y="153" width="42" height="42" rx="8"/><rect x="88" y="153" width="42" height="42" rx="8"/>
+      <rect x="146" y="153" width="42" height="42" rx="8"/><rect x="204" y="153" width="42" height="42" rx="8"/>
+      <rect x="30" y="211" width="42" height="42" rx="8"/><rect x="88" y="211" width="42" height="42" rx="8"/>
+    </g>
+    <g fill="#24a171"><rect x="146" y="211" width="42" height="42" rx="8"/><rect x="204" y="211" width="42" height="42" rx="8"/></g>
+  </g>
+</svg>
