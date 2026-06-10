@@ -30,9 +30,8 @@ export function FaqSection({
           </p>
         </div>
         <Accordion
-          type="single"
-          collapsible
-          className="mt-8 overflow-hidden rounded-[24px] border border-border bg-card px-5 md:col-span-8 md:mt-0 md:px-7"
+          type="multiple"
+          className="mt-8 rounded-[24px] border border-border bg-card px-5 md:col-span-8 md:mt-0 md:px-7"
         >
           {items.map((item, index) => (
             <AccordionItem key={item.question} value={`faq-${index}`}>
