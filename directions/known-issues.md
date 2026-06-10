@@ -70,3 +70,12 @@
   were regenerated, so it kept serving the old manifest references.
 - **Solution**: Rebuild first, then restart preview on a fresh port or restart
   the running preview process before browser QA.
+
+### Archive migration replaced a designed section with new content
+- **Error**: The salary page rendered an extra “Понятные расчёты” article
+  instead of the archive's tax-regime comparison panel.
+- **Cause**: The migration treated the archive section list as a loose content
+  outline and introduced a new article without checking the source component.
+- **Solution**: Verify every migrated section against both the latest archive
+  screenshot and its source component; preserve presentation while routing
+  calculations through the production domain modules.
