@@ -8,7 +8,6 @@ import {
   type ReactNode,
 } from 'react'
 import {
-  ArrowRight,
   ChevronDown,
   Download,
 } from 'lucide-react'
@@ -78,7 +77,8 @@ export function SalaryPage() {
   const [customRate, setCustomRate] = useState('13')
   const [advanceDay, setAdvanceDay] = useState('25')
   const [salaryDay, setSalaryDay] = useState('10')
-  const [scheduleExpanded, setScheduleExpanded] = useState(true)
+  const [scheduleExpanded, setScheduleExpanded] = useState(false)
+  const [compareExpanded, setCompareExpanded] = useState(true)
   const [exporting, setExporting] = useState(false)
 
   const amount = useMemo(() => parseMoney(amountRaw), [amountRaw])
@@ -198,12 +198,17 @@ export function SalaryPage() {
               mode={mode}
               grossMonthly={result.inputGrossMonthly}
             />
+            <ComparePanel
+              input={input}
+              currentMode={mode}
+              grossMonthly={result.inputGrossMonthly}
+              expanded={compareExpanded}
+              onToggle={() => setCompareExpanded((value) => !value)}
+            />
           </div>
         ) : (
           <EmptyHint />
         )}
-
-        <SalaryArticle />
       </div>
 
       <FaqSection items={SALARY_FAQ} />
@@ -930,6 +935,7 @@ function ScheduleCard({
         type="button"
         onClick={onToggleExpanded}
         aria-expanded={expanded}
+        aria-controls="salary-schedule-preview"
         className="flex w-full items-center justify-between gap-3 border-t border-border/70 bg-muted/30 px-5 py-3.5 text-left transition outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset md:px-7"
       >
         <span className="text-[14px] font-medium text-foreground md:text-[15px]">
@@ -946,11 +952,14 @@ function ScheduleCard({
       </button>
 
       <div
+        id="salary-schedule-preview"
         className="overflow-hidden border-t border-border/70 transition-[max-height,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
         style={{
           maxHeight: expanded ? '1600px' : '0px',
           opacity: expanded ? 1 : 0,
         }}
+        aria-hidden={!expanded}
+        inert={!expanded ? true : undefined}
       >
         <div className="min-h-0">
           <SchedulePreview
@@ -1526,55 +1535,165 @@ function buildInsightCards(
   ]
 }
 
-function SalaryArticle() {
-  return (
-    <section className="mx-auto mt-10 max-w-7xl px-0 pb-24 md:mt-12 md:pb-28">
-      <div className="rounded-[28px] border border-border bg-card p-6 md:p-10">
-        <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-          О сервисе
-        </div>
-        <div className="mt-3 grid gap-8 md:grid-cols-[1.2fr_0.8fr] md:items-start">
-          <div>
-            <h2 className="font-display text-[28px] font-bold leading-tight tracking-tight text-foreground md:text-[38px]">
-              Понятные расчёты
-            </h2>
-            <div className="mt-4 space-y-4 text-[15px] leading-7 text-muted-foreground md:text-[16px]">
-              <p>
-                Зарплата считается локально в браузере. Сервис использует
-                производственный календарь 2026 года, применяет прогрессивный
-                НДФЛ только к части дохода сверх порога и переносит выплаты на
-                предыдущий рабочий день, если дата попадает на выходной или
-                праздник.
-              </p>
-              <p>
-                Если у вас нестандартная схема оплаты, проверьте результат у
-                бухгалтера или в официальном источнике. Для типовых сценариев
-                этого экрана достаточно, чтобы быстро понять сумму на руки и
-                даты поступлений.
-              </p>
-            </div>
-          </div>
+const COMPARISON_MODES: Array<{
+  mode: Extract<TaxMode, 'tk_rf' | 'npd' | 'usn_6'>
+  label: string
+}> = [
+  { mode: 'tk_rf', label: 'ТК РФ' },
+  { mode: 'npd', label: 'НПД' },
+  { mode: 'usn_6', label: 'ИП УСН 6%' },
+]
 
-          <div className="rounded-[24px] border border-border bg-background p-5 md:p-6">
-            <div className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              Что показывает экран
-            </div>
-            <ul className="mt-4 space-y-3 text-[14px] leading-relaxed text-foreground">
-              <li>• Сумму на руки и налоговую нагрузку по режимам.</li>
-              <li>• Даты ближайших выплат и помесячный график.</li>
-              <li>• XLSX-таблицу для Excel и Google Sheets.</li>
-            </ul>
-            <a
-              href="/vacation"
-              className="mt-5 inline-flex items-center gap-2 text-[14px] font-medium text-primary"
-            >
-              Подобрать отпуск по тому же календарю
-              <ArrowRight className="size-4" />
-            </a>
+function ComparePanel({
+  input,
+  currentMode,
+  grossMonthly,
+  expanded,
+  onToggle,
+}: {
+  input: SalaryInput
+  currentMode: TaxMode
+  grossMonthly: number
+  expanded: boolean
+  onToggle: () => void
+}) {
+  const comparisons = useMemo(
+    () =>
+      COMPARISON_MODES.map(({ mode, label }) => ({
+        mode,
+        label,
+        result: calculateSalary({
+          ...input,
+          mode,
+          amount: grossMonthly,
+          amountMode: 'gross',
+          paymentSchedule:
+            mode === 'tk_rf' ? input.paymentSchedule : undefined,
+        }),
+      })),
+    [grossMonthly, input],
+  )
+  const bestAnnualNet = Math.max(
+    ...comparisons.map(({ result }) => result.totals.net),
+  )
+  const contentId = 'salary-mode-comparison'
+
+  return (
+    <section className="overflow-hidden rounded-[24px] border border-border/70 bg-card">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={expanded}
+        aria-controls={contentId}
+        className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left outline-none transition-colors hover:bg-muted/20 focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset md:px-7 md:py-6"
+      >
+        <span className="flex min-w-0 flex-col gap-1">
+          <span className="font-display text-[18px] font-bold leading-tight tracking-tight text-foreground md:text-[21px]">
+            Сравнить с другими режимами
+          </span>
+          <span className="text-[13px] leading-relaxed text-muted-foreground md:text-[14px]">
+            Та же сумма дохода в трёх режимах налогообложения
+          </span>
+        </span>
+        <span
+          className={cn(
+            'grid size-9 shrink-0 place-items-center rounded-full border border-border text-muted-foreground transition-[transform,border-color,background-color,color] duration-300 motion-reduce:transition-none',
+            expanded &&
+              'rotate-180 border-primary/30 bg-primary/5 text-primary',
+          )}
+          aria-hidden="true"
+        >
+          <ChevronDown className="size-4" />
+        </span>
+      </button>
+
+      <div
+        id={contentId}
+        className={cn(
+          'overflow-hidden transition-[max-height,opacity] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none',
+          expanded
+            ? 'max-h-[1400px] opacity-100 md:max-h-[760px]'
+            : 'max-h-0 opacity-0',
+        )}
+        aria-hidden={!expanded}
+      >
+        <div className="border-t border-border/70 p-5 md:p-7">
+          <div className="grid gap-4 md:grid-cols-3">
+            {comparisons.map(({ mode, label, result }) => {
+              const isCurrent = mode === currentMode
+              const isBest = result.totals.net === bestAnnualNet
+
+              return (
+                <article
+                  key={mode}
+                  className={cn(
+                    'flex flex-col gap-5 rounded-[20px] border bg-background p-5 md:p-6',
+                    isBest
+                      ? 'border-primary/40 bg-primary/[0.04]'
+                      : 'border-border',
+                  )}
+                >
+                  <div className="flex min-h-6 items-start justify-between gap-3">
+                    <h3 className="text-[15px] font-semibold uppercase tracking-[0.06em] text-foreground md:text-[16px]">
+                      {label}
+                    </h3>
+                    <div className="flex flex-wrap justify-end gap-1.5">
+                      {isCurrent && (
+                        <span className="rounded-full bg-foreground px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-background">
+                          Ваш
+                        </span>
+                      )}
+                      {isBest && (
+                        <span className="rounded-full bg-primary px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.08em] text-primary-foreground">
+                          Больше всего
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                      На руки за год
+                    </div>
+                    <div className="mt-2 font-display text-[30px] font-bold leading-none tracking-tight text-foreground tabular md:text-[36px]">
+                      {formatRubles(result.totals.net)}
+                    </div>
+                  </div>
+
+                  <dl className="mt-auto space-y-2 text-[13px] md:text-[14px]">
+                    <CompareRow
+                      label="В месяц"
+                      value={formatRubles(result.averageMonthlyNet)}
+                    />
+                    <CompareRow
+                      label="Налог за год"
+                      value={formatRubles(
+                        result.totals.tax + result.totals.contributions,
+                      )}
+                    />
+                    <CompareRow
+                      label="Ставка"
+                      value={`${(result.totals.effectiveRate * 100)
+                        .toFixed(1)
+                        .replace('.', ',')}%`}
+                    />
+                  </dl>
+                </article>
+              )
+            })}
           </div>
         </div>
       </div>
     </section>
+  )
+}
+
+function CompareRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="font-medium text-foreground tabular">{value}</dd>
+    </div>
   )
 }
 
