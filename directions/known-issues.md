@@ -46,3 +46,11 @@
 - **Cause**: Grid track interpolation was too subtle for the short FAQ content.
 - **Solution**: Use `max-height` plus opacity for a more legible open/close
   motion on short accordion panels.
+
+### Two-column FAQ layout caused left text to feel like it jumped
+- **Error**: Expanding the accordion made the left column feel like it shifted
+  with the right-hand content.
+- **Cause**: The grid container was stretching items instead of anchoring them
+  to the top.
+- **Solution**: Use `items-start` and `self-start` on side-by-side sections
+  where one column grows independently.

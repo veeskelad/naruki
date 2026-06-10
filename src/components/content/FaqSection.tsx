@@ -19,8 +19,8 @@ export function FaqSection({
 }) {
   return (
     <section className="mx-auto max-w-7xl px-4 pb-24 md:px-6 md:pb-32">
-      <div className="md:grid md:grid-cols-12 md:gap-10">
-        <div className="md:col-span-4">
+      <div className="md:grid md:grid-cols-12 md:items-start md:gap-10">
+        <div className="md:col-span-4 md:self-start">
           <h2 className="font-display text-[24px] font-bold leading-tight tracking-tight md:text-[32px]">
             {title}
           </h2>
@@ -32,7 +32,7 @@ export function FaqSection({
         <Accordion
           type="multiple"
           defaultValue={['faq-0']}
-          className="mt-8 rounded-[24px] border border-border bg-card px-5 md:col-span-8 md:mt-0 md:px-7"
+          className="mt-8 rounded-[24px] border border-border bg-card px-5 md:col-span-8 md:mt-0 md:self-start md:px-7"
         >
           {items.map((item, index) => (
             <AccordionItem key={item.question} value={`faq-${index}`}>
