@@ -41,7 +41,6 @@ export function FaqSection({
               </AccordionTrigger>
               <AccordionContent
                 forceMount
-                containerClassName="data-[state=closed]:hidden"
                 className="max-w-2xl text-[14px] leading-relaxed text-muted-foreground md:text-[15px]"
               >
                 {item.answer}

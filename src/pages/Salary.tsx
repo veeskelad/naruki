@@ -55,7 +55,7 @@ export function SalaryPage() {
   const [amountMode, setAmountMode] = useState<AmountMode>('gross')
   const [children, setChildren] = useState(0)
   const [useProgressiveTax, setUseProgressiveTax] = useState(true)
-  const [useChildDeduction, setUseChildDeduction] = useState(true)
+  const [useChildDeduction, setUseChildDeduction] = useState(false)
   const [npdBusinessShare, setNpdBusinessShare] = useState(60)
   const [useNpdBonus, setUseNpdBonus] = useState(true)
   const [usnContributions, setUsnContributions] = useState('57 390')
@@ -327,7 +327,10 @@ function ModeFields(props: {
             <button
               key={count}
               type="button"
-              onClick={() => props.setChildren(count)}
+              onClick={() => {
+                props.setChildren(count)
+                props.setUseChildDeduction(count > 0)
+              }}
               className={cn(
                 'min-h-9 rounded-full border px-3 text-sm',
                 props.children === count
@@ -345,7 +348,7 @@ function ModeFields(props: {
           label="Прогрессивная шкала НДФЛ 13–22%"
         />
         <CheckLine
-          checked={props.useChildDeduction}
+          checked={props.children > 0 && props.useChildDeduction}
           onChange={props.setUseChildDeduction}
           disabled={props.children === 0}
           label="Учитывать стандартный вычет на детей"

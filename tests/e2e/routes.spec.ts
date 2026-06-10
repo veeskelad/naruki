@@ -23,11 +23,84 @@ test('salary inputs update the result', async ({ page }) => {
   ).toBeVisible()
 })
 
+test('child deduction follows the selected child count', async ({ page }) => {
+  await page.goto('/salary')
+
+  const deduction = page.getByRole('checkbox', {
+    name: 'Учитывать стандартный вычет на детей',
+  })
+
+  await expect(deduction).toBeDisabled()
+  await expect(deduction).not.toBeChecked()
+
+  await page.getByRole('button', { name: '1', exact: true }).click()
+  await expect(deduction).toBeEnabled()
+  await expect(deduction).toBeChecked()
+
+  await page.getByRole('button', { name: 'нет', exact: true }).click()
+  await expect(deduction).toBeDisabled()
+  await expect(deduction).not.toBeChecked()
+})
+
 test('vacation opens a month detail', async ({ page }) => {
   await page.goto('/vacation')
   await page.getByRole('button', { name: /Май/ }).first().click()
   await expect(page.getByRole('heading', { name: 'Май 2026' })).toBeVisible()
   await expect(page.getByText(/Выбирать можно только рабочие дни/)).toBeVisible()
+})
+
+test('vacation starts without a preselected range and supports drag selection', async ({
+  page,
+}) => {
+  await page.goto('/vacation')
+
+  await expect(
+    page.getByText(
+      'Выберите рекомендацию или откройте месяц и отметьте дни вручную.',
+    ),
+  ).toBeVisible()
+
+  const topRecommendation = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'Лучшие варианты' }) })
+    .locator('button')
+    .first()
+  await expect(topRecommendation).toHaveClass(/border-emerald-200/)
+
+  await page.getByRole('button', { name: /Май/ }).first().click()
+  const day4 = page.getByRole('button', { name: /^4 май:/ })
+  const day5 = page.getByRole('button', { name: /^5 май:/ })
+  const day6 = page.getByRole('button', { name: /^6 май:/ })
+  const day7 = page.getByRole('button', { name: /^7 май:/ })
+  const day8 = page.getByRole('button', { name: /^8 май:/ })
+
+  await day4.scrollIntoViewIfNeeded()
+  const boxes = await Promise.all(
+    [day4, day5, day6, day7, day8].map((locator) => locator.boundingBox()),
+  )
+
+  boxes.forEach((box) => expect(box).not.toBeNull())
+
+  await page.mouse.move(
+    boxes[0]!.x + boxes[0]!.width / 2,
+    boxes[0]!.y + boxes[0]!.height / 2,
+  )
+  await page.mouse.down()
+  for (const box of boxes.slice(1)) {
+    await page.mouse.move(
+      box!.x + box!.width / 2,
+      box!.y + box!.height / 2,
+    )
+  }
+  await page.mouse.up()
+
+  await expect(day4).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    page.getByRole('button', { name: /^5 май:/ }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    page.getByRole('button', { name: /^8 май:/ }),
+  ).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('FAQ starts collapsed and keeps its desktop columns separated', async ({

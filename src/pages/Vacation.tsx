@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft,
   CalendarDays,
@@ -61,10 +61,8 @@ export function VacationPage() {
     null,
   )
   const selectedDates = useMemo(
-    () =>
-      customSelection ??
-      new Set(recommendations[0]?.vacationDates ?? []),
-    [customSelection, recommendations],
+    () => customSelection ?? new Set<string>(),
+    [customSelection],
   )
   const breakdown = useMemo(
     () => restBreakdown(selectedDates),
@@ -80,7 +78,7 @@ export function VacationPage() {
   const toggleDate = (iso: string) => {
     if (!canSelectVacationDate(iso)) return
     setCustomSelection((current) => {
-      const next = new Set(current ?? selectedDates)
+      const next = new Set<string>(current ?? selectedDates)
       if (next.has(iso)) next.delete(iso)
       else next.add(iso)
       return next
@@ -401,6 +399,35 @@ function MonthDetail({
     ...days,
   ]
   while (cells.length < 42) cells.push(null)
+  const [dragMode, setDragMode] = useState<'select' | 'deselect' | null>(null)
+  const dragModeRef = useRef<'select' | 'deselect' | null>(null)
+
+  useEffect(() => {
+    dragModeRef.current = dragMode
+  }, [dragMode])
+
+  useEffect(() => {
+    if (!dragMode) return
+    const clearDrag = () => {
+      dragModeRef.current = null
+      setDragMode(null)
+    }
+    window.addEventListener('pointerup', clearDrag)
+    window.addEventListener('pointercancel', clearDrag)
+    return () => {
+      window.removeEventListener('pointerup', clearDrag)
+      window.removeEventListener('pointercancel', clearDrag)
+    }
+  }, [dragMode])
+
+  const applyDrag = (iso: string) => {
+    const mode = dragModeRef.current
+    if (!mode) return
+    const selected = selectedDates.has(iso)
+    if ((mode === 'select' && !selected) || (mode === 'deselect' && selected)) {
+      onToggleDate(iso)
+    }
+  }
 
   return (
     <section className="rounded-[24px] border border-border bg-card p-5 md:p-6">
@@ -459,19 +486,40 @@ function MonthDetail({
                 key={day.date}
                 type="button"
                 disabled={!canSelectVacationDate(day.date)}
-                onClick={() => onToggleDate(day.date)}
+                onPointerDown={(event) => {
+                  if (event.button !== 0) return
+                  event.preventDefault()
+                  const shouldSelect = !selectedDates.has(day.date)
+                  const nextMode = shouldSelect ? 'select' : 'deselect'
+                  dragModeRef.current = nextMode
+                  setDragMode(nextMode)
+                  onToggleDate(day.date)
+                }}
+                onPointerEnter={() => applyDrag(day.date)}
+                onPointerUp={() => {
+                  dragModeRef.current = null
+                  setDragMode(null)
+                }}
+                onPointerCancel={() => {
+                  dragModeRef.current = null
+                  setDragMode(null)
+                }}
+                onClick={(event) => {
+                  if (event.detail !== 0) return
+                  onToggleDate(day.date)
+                }}
                 aria-pressed={selectedDates.has(day.date)}
                 aria-label={`${day.day} ${MONTH_NAMES_RU[month].toLowerCase()}: ${
                   day.name ?? kindLabel(day.kind)
                 }`}
                 className={cn(
-                  'relative aspect-[5/4] border-b border-r border-border text-sm transition focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:cursor-default',
+                  'relative aspect-[5/4] border-b border-r border-border text-sm transition-all duration-200 ease-out focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/10 disabled:cursor-default',
                   day.kind === 'weekend' && 'bg-rose-50/60 text-rose-700',
                   day.kind === 'holiday' && 'bg-rose-100 text-rose-700',
                   day.kind === 'transfer-off' && 'bg-sky-50 text-sky-700',
                   day.kind === 'pre-holiday' && 'bg-sky-50/50',
                   selectedDates.has(day.date) &&
-                    'bg-primary font-semibold text-primary-foreground',
+                    'bg-primary font-semibold text-primary-foreground shadow-[inset_0_0_0_1px_rgba(255,255,255,0.18)] scale-[0.98]',
                 )}
               >
                 {day.day}
@@ -641,6 +689,7 @@ function Recommendations({
           const active =
             option.vacationDates.length === selectedDates.size &&
             option.vacationDates.every((date) => selectedDates.has(date))
+          const topChoice = option.isTopChoice === true
           return (
             <li key={option.startDate}>
               <button
@@ -650,15 +699,19 @@ function Recommendations({
                   'flex w-full gap-3 rounded-2xl border p-3 text-left transition',
                   active
                     ? 'border-primary/40 bg-primary/10'
-                    : 'border-border hover:border-primary/30',
+                    : topChoice
+                      ? 'border-emerald-200 bg-emerald-50/70'
+                      : 'border-border hover:border-primary/30',
                 )}
               >
                 <span
                   className={cn(
-                    'grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold',
+                    'grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold transition-all duration-200',
                     active
                       ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground',
+                      : topChoice
+                        ? 'bg-emerald-600 text-white'
+                        : 'bg-muted text-muted-foreground',
                   )}
                 >
                   {active ? <Check className="size-3.5" /> : index + 1}
