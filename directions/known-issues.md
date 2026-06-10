@@ -39,3 +39,10 @@
   transition once the content stayed mounted for SEO.
 - **Solution**: Prefer a grid-template-row transition with opacity for shared
   open/close motion when the content must remain in the DOM.
+
+### Grid row transitions did not read as an obvious open motion
+- **Error**: The FAQ still felt like it snapped open even though close
+  animation was visible.
+- **Cause**: Grid track interpolation was too subtle for the short FAQ content.
+- **Solution**: Use `max-height` plus opacity for a more legible open/close
+  motion on short accordion panels.
