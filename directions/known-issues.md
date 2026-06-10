@@ -24,3 +24,11 @@
   the Tailwind state selector was passed to its inner text wrapper.
 - **Solution**: Expose a container class on the local accordion primitive and
   apply state-based visibility to the element that owns `data-state`.
+
+### Force-mounted accordion content reopened after animation
+- **Error**: Closed FAQ items looked expanded again after using the shadcn
+  accordion animation preset.
+- **Cause**: `forceMount` kept the content in the DOM, but the closed state no
+  longer kept a persistent `height: 0` after the animation finished.
+- **Solution**: Keep `data-[state=closed]:h-0` on the accordion content while
+  using `animate-accordion-up/down` for the motion.
