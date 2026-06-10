@@ -31,6 +31,7 @@ export function FaqSection({
         </div>
         <Accordion
           type="multiple"
+          defaultValue={['faq-0']}
           className="mt-8 rounded-[24px] border border-border bg-card px-5 md:col-span-8 md:mt-0 md:px-7"
         >
           {items.map((item, index) => (
