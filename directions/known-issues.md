@@ -32,3 +32,10 @@
   longer kept a persistent `height: 0` after the animation finished.
 - **Solution**: Keep `data-[state=closed]:h-0` on the accordion content while
   using `animate-accordion-up/down` for the motion.
+
+### Accordion keyframes felt abrupt on open with forceMounted content
+- **Error**: Opening the FAQ looked almost instant while closing still animated.
+- **Cause**: The height keyframe preset was not giving a symmetric perceived
+  transition once the content stayed mounted for SEO.
+- **Solution**: Prefer a grid-template-row transition with opacity for shared
+  open/close motion when the content must remain in the DOM.
