@@ -2,9 +2,9 @@ import { StructuredData } from '@/seo/StructuredData'
 import { absoluteUrl, SITE_NAME } from '@/seo/site'
 import { SALARY_FAQ } from '@/seo/content'
 
-const title = 'Сколько придёт на руки — калькулятор зарплаты 2026'
+const title = 'Сколько и когда придёт — калькулятор зарплаты 2026'
 const description =
-  'Рассчитайте зарплату на руки, НДФЛ и даты выплат в 2026 году для ТК РФ, самозанятых и ИП на УСН. Расчёт выполняется только в браузере.'
+  'Заполните три шага — получите сумму на руки, НДФЛ и даты выплат на 2026 год. Сохраните результат в Excel. Расчёт выполняется только в браузере.'
 
 export function Head() {
   const canonical = absoluteUrl('/salary')
@@ -41,7 +41,7 @@ export function Head() {
           {
             '@context': 'https://schema.org',
             '@type': 'WebApplication',
-            name: 'Калькулятор зарплаты на руки',
+            name: 'Калькулятор зарплаты и выплат',
             url: canonical,
             applicationCategory: 'FinanceApplication',
             operatingSystem: 'Web',

@@ -253,16 +253,24 @@ function HowItWorks() {
       <h2 className="font-display text-[24px] font-bold tracking-tight text-foreground md:text-[32px]">
         Как это работает
       </h2>
-      <ol className="mt-8 grid gap-8 md:mt-12 md:grid-cols-3 md:gap-10">
+      <ol className="mt-8 grid gap-8 md:mt-12 md:grid-cols-12 md:gap-x-8 md:gap-y-10">
         {steps.map((s, i) => (
-          <li key={i} className="flex flex-col gap-4">
+          <li
+            key={i}
+            className={cn(
+              'flex flex-col gap-4',
+              i === 0 && 'md:col-span-3 md:col-start-1',
+              i === 1 && 'md:col-span-4 md:col-start-5',
+              i === 2 && 'md:col-span-3 md:col-start-10',
+            )}
+          >
             <span
-              className="font-display text-[64px] font-bold leading-none tracking-tight text-primary/75 md:text-[88px]"
+              className="font-display text-[64px] font-bold leading-none tracking-tight text-primary/75 md:text-[96px]"
               aria-hidden
             >
               {String(i + 1).padStart(2, '0')}
             </span>
-            <span className="text-[16px] leading-relaxed text-foreground md:text-[17px]">
+            <span className="max-w-[18ch] text-[16px] leading-relaxed text-foreground md:text-[17px]">
               {s}
             </span>
           </li>
