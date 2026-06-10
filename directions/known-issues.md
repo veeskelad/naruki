@@ -54,3 +54,19 @@
   to the top.
 - **Solution**: Use `items-start` and `self-start` on side-by-side sections
   where one column grows independently.
+
+### Schedule preview needed explicit max-height clipping
+- **Error**: The salary schedule preview looked open even when the toggle said
+  it was collapsed.
+- **Cause**: The table retained its intrinsic height inside a grid wrapper, so
+  the collapse animation did not actually clip the content.
+- **Solution**: Animate the wrapper with explicit `max-height` and `opacity`
+  instead of relying on grid rows for table content.
+
+### Vite preview kept stale asset names after rebuild
+- **Error**: Local preview returned 404s for newly generated CSS/JS chunks after
+  a fresh build.
+- **Cause**: The preview server was started before the latest `dist/` files
+  were regenerated, so it kept serving the old manifest references.
+- **Solution**: Rebuild first, then restart preview on a fresh port or restart
+  the running preview process before browser QA.

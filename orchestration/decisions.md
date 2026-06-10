@@ -21,3 +21,16 @@ are not silently treated as official data.
 The latest archive screens define presentation. Official government and tax
 sources override prototype formulas and hard-coded examples.
 
+## 2026-06-10: Salary archive migration on current engine
+
+The `/salary` route was rebuilt to match the updated `naruki.zip` screens,
+but the current typed salary calculation engine and XLSX export helper were
+kept as the execution source of truth. This preserves browser-only behaviour
+and static SEO while aligning presentation with the archive.
+
+## 2026-06-10: Schedule preview uses explicit clipping
+
+The salary schedule table preview collapses with inline `max-height` and
+`opacity` on its wrapper rather than a grid row animation. Table content
+resisted grid collapsing in practice, and explicit clipping is more reliable
+for this section.
