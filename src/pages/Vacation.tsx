@@ -35,6 +35,7 @@ import {
   restBreakdown,
 } from '@/lib/vacation/selection'
 import {
+  buildVacationClipboardText,
   exportVacationCsv,
   exportVacationIcs,
 } from '@/lib/export/vacation'
@@ -60,6 +61,9 @@ export function VacationPage() {
   const [customSelection, setCustomSelection] = useState<Set<string> | null>(
     null,
   )
+  const [copyStatus, setCopyStatus] = useState<
+    'idle' | 'success' | 'error'
+  >('idle')
   const selectedDates = useMemo(
     () => customSelection ?? new Set<string>(),
     [customSelection],
@@ -86,9 +90,18 @@ export function VacationPage() {
   }
 
   const copySelection = async () => {
-    const dates = [...selectedDates].sort()
-    const text = `Отпуск ${YEAR}: ${dates.join(', ')}. ${breakdown.vacation} дней отпуска → ${breakdown.total} дней отдыха.`
-    await navigator.clipboard.writeText(text)
+    const text = buildVacationClipboardText(
+      YEAR,
+      selectedDates,
+      breakdown.vacation,
+      breakdown.total,
+    )
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopyStatus('success')
+    } catch {
+      setCopyStatus('error')
+    }
   }
 
   return (
@@ -146,6 +159,7 @@ export function VacationPage() {
               budget={days}
               onClear={() => setCustomSelection(new Set())}
               onCopy={copySelection}
+              copyStatus={copyStatus}
             />
             <Recommendations
               recommendations={recommendations}
@@ -547,12 +561,14 @@ function SelectionCard({
   budget,
   onClear,
   onCopy,
+  copyStatus,
 }: {
   selectedDates: Set<string>
   breakdown: ReturnType<typeof restBreakdown>
   budget: number
   onClear: () => void
   onCopy: () => void
+  copyStatus: 'idle' | 'success' | 'error'
 }) {
   const overBudget = breakdown.vacation > budget
   return (
@@ -606,7 +622,7 @@ function SelectionCard({
               className="min-h-10 rounded-xl"
             >
               <Copy />
-              Скопировать
+              {copyStatus === 'success' ? 'Скопировано' : 'Скопировать'}
             </Button>
             <Button
               type="button"
@@ -629,6 +645,22 @@ function SelectionCard({
               CSV
             </Button>
           </div>
+          <p
+            role="status"
+            aria-live="polite"
+            className={cn(
+              'mt-2 min-h-5 text-xs',
+              copyStatus === 'error'
+                ? 'text-destructive'
+                : 'text-muted-foreground',
+            )}
+          >
+            {copyStatus === 'success'
+              ? 'Даты и итог отпуска скопированы.'
+              : copyStatus === 'error'
+                ? 'Не удалось скопировать. Разрешите доступ к буферу обмена.'
+                : ''}
+          </p>
         </>
       )}
     </section>

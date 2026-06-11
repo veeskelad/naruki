@@ -24,15 +24,19 @@ import { SALARY_FAQ } from '@/seo/content'
 import { cn } from '@/lib/utils'
 import {
   calculateSalary,
+  adjustedMonthSummary,
+  countWorkdays,
+  previousWorkdayDate,
   type SalaryInput,
   type TaxMode,
+  type WorkdayAdjustment,
+  type WorkdayAdjustments,
   type YearSalaryResult,
 } from '@/lib/salary'
 import { exportSalaryXlsx } from '@/lib/export/salary'
 import {
   daysInMonth,
   diffDays,
-  isWorkDay,
   isoDate,
   parseIso,
 } from '@/lib/calendar'
@@ -71,7 +75,7 @@ export function SalaryPage() {
   const [amountMode, setAmountMode] = useState<'gross' | 'net'>('gross')
   const [children, setChildren] = useState('0')
   const [useProgressiveTax, setUseProgressiveTax] = useState(true)
-  const [useChildDeduction, setUseChildDeduction] = useState(true)
+  const [useChildDeduction, setUseChildDeduction] = useState(false)
   const [npdBusinessShare, setNpdBusinessShare] = useState('60')
   const [usnFixedContributions, setUsnFixedContributions] = useState('57 390')
   const [customRate, setCustomRate] = useState('13')
@@ -79,6 +83,8 @@ export function SalaryPage() {
   const [salaryDay, setSalaryDay] = useState('10')
   const [scheduleExpanded, setScheduleExpanded] = useState(false)
   const [compareExpanded, setCompareExpanded] = useState(true)
+  const [workdayAdjustments, setWorkdayAdjustments] =
+    useState<WorkdayAdjustments>({})
   const [exporting, setExporting] = useState(false)
 
   const amount = useMemo(() => parseMoney(amountRaw), [amountRaw])
@@ -133,7 +139,9 @@ export function SalaryPage() {
     if (!canShowResult || exporting) return
     setExporting(true)
     try {
-      await exportSalaryXlsx(input, result)
+      await exportSalaryXlsx(input, result, {
+        workdayAdjustments,
+      })
     } finally {
       setExporting(false)
     }
@@ -160,7 +168,10 @@ export function SalaryPage() {
           amountMode={amountMode}
           setAmountMode={setAmountMode}
           children={children}
-          setChildren={setChildren}
+          setChildren={(value) => {
+            setChildren(value)
+            setUseChildDeduction(value !== '0')
+          }}
           useProgressiveTax={useProgressiveTax}
           setUseProgressiveTax={setUseProgressiveTax}
           useChildDeduction={useChildDeduction}
@@ -192,6 +203,39 @@ export function SalaryPage() {
               onToggleExpanded={() => setScheduleExpanded((value) => !value)}
               onExport={handleExport}
               exporting={exporting}
+              adjustments={workdayAdjustments}
+              onChangeAdjustment={(monthIndex, field, value, max) => {
+                setWorkdayAdjustments((current) => {
+                  const existing = current[monthIndex] ?? {
+                    firstHalf: countWorkdays(YEAR, monthIndex, 1, 15),
+                    secondHalf: countWorkdays(
+                      YEAR,
+                      monthIndex,
+                      16,
+                      daysInMonth(YEAR, monthIndex),
+                    ),
+                  }
+                  const next: WorkdayAdjustment = {
+                    ...existing,
+                    [field]: clamp(value, 0, max),
+                  }
+                  const defaults = adjustedMonthSummary(
+                    YEAR,
+                    result.months[monthIndex],
+                  )
+
+                  if (
+                    next.firstHalf === defaults.defaultFirstHalf &&
+                    next.secondHalf === defaults.defaultSecondHalf
+                  ) {
+                    const rest = { ...current }
+                    delete rest[monthIndex]
+                    return rest
+                  }
+
+                  return { ...current, [monthIndex]: next }
+                })
+              }}
             />
             <InsightGrid
               result={result}
@@ -886,6 +930,8 @@ function ScheduleCard({
   onToggleExpanded,
   onExport,
   exporting,
+  adjustments,
+  onChangeAdjustment,
 }: {
   result: YearSalaryResult
   mode: TaxMode
@@ -896,15 +942,18 @@ function ScheduleCard({
   onToggleExpanded: () => void
   onExport: () => Promise<void>
   exporting: boolean
+  adjustments: WorkdayAdjustments
+  onChangeAdjustment: (
+    monthIndex: number,
+    field: keyof WorkdayAdjustment,
+    value: number,
+    max: number,
+  ) => void
 }) {
   const summary =
     mode === 'tk_rf'
       ? `Аванс ${advanceDay}-го · зарплата ${salaryDay}-го · в среднем ${formatRubles(result.averageMonthlyNet)} в месяц на руки`
       : `${result.events.length} ${pluralPayout(result.events.length)} в год · в среднем ${formatRubles(result.averageMonthlyNet)} в месяц на руки`
-  const [adjustments, setAdjustments] = useState<Record<number, WorkdayAdjustments>>(
-    {},
-  )
-
   return (
     <section className="overflow-hidden rounded-[24px] border border-border/70 bg-card">
       <div className="grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center md:gap-6 md:p-7">
@@ -969,47 +1018,7 @@ function ScheduleCard({
             salaryDay={salaryDay}
             year={year}
             adjustments={adjustments}
-            onChangeAdjustment={(monthIndex, field, value, max) => {
-              setAdjustments((current) => {
-                const existing =
-                  current[monthIndex] ??
-                  ({
-                    firstHalf: countWorkdays(year, monthIndex, 1, 15),
-                    secondHalf: countWorkdays(
-                      year,
-                      monthIndex,
-                      16,
-                      daysInMonth(year, monthIndex),
-                    ),
-                  } satisfies WorkdayAdjustments)
-
-                const next: WorkdayAdjustments = {
-                  ...existing,
-                  [field]: clamp(value, 0, max),
-                }
-
-                const defaultFirst = countWorkdays(year, monthIndex, 1, 15)
-                const defaultSecond = countWorkdays(
-                  year,
-                  monthIndex,
-                  16,
-                  daysInMonth(year, monthIndex),
-                )
-                if (
-                  next.firstHalf === defaultFirst &&
-                  next.secondHalf === defaultSecond
-                ) {
-                  const nextCurrent = { ...current }
-                  delete nextCurrent[monthIndex]
-                  return nextCurrent
-                }
-
-                return {
-                  ...current,
-                  [monthIndex]: next,
-                }
-              })
-            }}
+            onChangeAdjustment={onChangeAdjustment}
           />
         </div>
       </div>
@@ -1031,10 +1040,10 @@ function SchedulePreview({
   advanceDay: number
   salaryDay: number
   year: number
-  adjustments: Record<number, WorkdayAdjustments>
+  adjustments: WorkdayAdjustments
   onChangeAdjustment: (
     monthIndex: number,
-    field: keyof WorkdayAdjustments,
+    field: keyof WorkdayAdjustment,
     value: number,
     max: number,
   ) => void
@@ -1112,10 +1121,10 @@ function SchedulePreviewTK({
   advanceDay: number
   salaryDay: number
   year: number
-  adjustments: Record<number, WorkdayAdjustments>
+  adjustments: WorkdayAdjustments
   onChangeAdjustment: (
     monthIndex: number,
-    field: keyof WorkdayAdjustments,
+    field: keyof WorkdayAdjustment,
     value: number,
     max: number,
   ) => void
@@ -1147,29 +1156,17 @@ function SchedulePreviewTK({
         <tbody>
           {result.months.map((month, index) => {
             const daysInMonthTotal = daysInMonth(year, index)
-            const defaultFirstHalf = countWorkdays(year, index, 1, 15)
-            const defaultSecondHalf = countWorkdays(
+            const adjusted = adjustedMonthSummary(
               year,
-              index,
-              16,
-              daysInMonthTotal,
+              month,
+              adjustments[index],
             )
-            const adjusted = adjustments[index] ?? {
-              firstHalf: defaultFirstHalf,
-              secondHalf: defaultSecondHalf,
-            }
-            const firstHalf = clamp(adjusted.firstHalf, 0, defaultFirstHalf)
-            const secondHalf = clamp(adjusted.secondHalf, 0, defaultSecondHalf)
-            const totalDays = firstHalf + secondHalf
-            const ratio = totalDays / (defaultFirstHalf + defaultSecondHalf || 1)
-            const totalTake = Math.round(month.net * ratio)
-            const advanceTake =
-              totalDays > 0 ? Math.round((totalTake * firstHalf) / totalDays) : 0
-            const salaryTake = totalTake - advanceTake
             const advanceDate = previousWorkdayDate(year, index, advanceDay)
             const salaryDate = previousWorkdayDate(year, index + 1, salaryDay)
-            const firstHalfEdited = firstHalf !== defaultFirstHalf
-            const secondHalfEdited = secondHalf !== defaultSecondHalf
+            const firstHalfEdited =
+              adjusted.firstHalf !== adjusted.defaultFirstHalf
+            const secondHalfEdited =
+              adjusted.secondHalf !== adjusted.defaultSecondHalf
 
             return (
               <tr key={month.month} className="hover:bg-muted/20">
@@ -1183,11 +1180,16 @@ function SchedulePreviewTK({
                   <EditableWorkdayCell
                     label="1 — 15"
                     monthLabel={`${MONTH_NAMES_RU_GENITIVE[index]} ${year}`}
-                    value={firstHalf}
-                    max={defaultFirstHalf}
+                    value={adjusted.firstHalf}
+                    max={adjusted.defaultFirstHalf}
                     edited={firstHalfEdited}
                     onChange={(value) =>
-                      onChangeAdjustment(index, 'firstHalf', value, defaultFirstHalf)
+                      onChangeAdjustment(
+                        index,
+                        'firstHalf',
+                        value,
+                        adjusted.defaultFirstHalf,
+                      )
                     }
                   />
                 </td>
@@ -1195,22 +1197,22 @@ function SchedulePreviewTK({
                   <EditableWorkdayCell
                     label="16 — конец"
                     monthLabel={`${MONTH_NAMES_RU_GENITIVE[index]} ${year}`}
-                    value={secondHalf}
-                    max={defaultSecondHalf}
+                    value={adjusted.secondHalf}
+                    max={adjusted.defaultSecondHalf}
                     edited={secondHalfEdited}
                     onChange={(value) =>
                       onChangeAdjustment(
                         index,
                         'secondHalf',
                         value,
-                        defaultSecondHalf,
+                        adjusted.defaultSecondHalf,
                       )
                     }
                   />
                 </td>
                 <td className={cn(previewTd, 'text-right')}>
                   <div className="font-medium tabular text-foreground">
-                    {formatRubles(advanceTake)}
+                    {formatRubles(adjusted.advanceNet)}
                   </div>
                   <div className="text-[11px] text-muted-foreground md:text-[12px]">
                     {formatShortDate(advanceDate)}
@@ -1218,14 +1220,14 @@ function SchedulePreviewTK({
                 </td>
                 <td className={cn(previewTd, 'text-right')}>
                   <div className="font-medium tabular text-foreground">
-                    {formatRubles(salaryTake)}
+                    {formatRubles(adjusted.salaryNet)}
                   </div>
                   <div className="text-[11px] text-muted-foreground md:text-[12px]">
                     {formatShortDate(salaryDate)}
                   </div>
                 </td>
                 <td className={cn(previewTd, 'text-right font-display font-semibold tabular text-foreground')}>
-                  {formatRubles(totalTake)}
+                  {formatRubles(adjusted.net)}
                 </td>
               </tr>
             )
@@ -1353,11 +1355,6 @@ function EditableWorkdayCell({
       </PopoverContent>
     </Popover>
   )
-}
-
-type WorkdayAdjustments = {
-  firstHalf: number
-  secondHalf: number
 }
 
 const previewTh =
@@ -1754,7 +1751,7 @@ function CheckLine({
       className={cn(
         'flex items-center gap-2.5 text-[13px] md:text-[14px]',
         disabled
-          ? 'cursor-not-allowed opacity-50'
+          ? 'cursor-not-allowed text-muted-foreground'
           : 'cursor-pointer text-foreground',
       )}
     >
@@ -1806,34 +1803,6 @@ function parsePercent(value: string, fallback: number): number {
   const parsed = parseInt(value.replace(/\D+/g, ''), 10)
   if (Number.isNaN(parsed)) return fallback
   return Math.max(0, Math.min(100, parsed))
-}
-
-function countWorkdays(
-  year: number,
-  monthIndex: number,
-  startDay: number,
-  endDay: number,
-): number {
-  let count = 0
-  for (let day = startDay; day <= endDay; day++) {
-    if (isWorkDay(year, monthIndex, day)) count++
-  }
-  return count
-}
-
-function previousWorkdayDate(
-  year: number,
-  monthIndex: number,
-  day: number,
-): string {
-  const date = new Date(year, monthIndex, day)
-  while (true) {
-    const y = date.getFullYear()
-    const m = date.getMonth()
-    const d = date.getDate()
-    if (isWorkDay(y, m, d)) return isoDate(y, m, d)
-    date.setDate(date.getDate() - 1)
-  }
 }
 
 function nextPaymentBreakdown(

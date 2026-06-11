@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import ExcelJS from 'exceljs'
 
 for (const route of [
   ['/', 'Планируйте отпуск и выплаты'],
@@ -21,6 +22,33 @@ test('salary inputs update the result', async ({ page }) => {
   await expect(
     page.getByText('2 088 000 ₽', { exact: true }).first(),
   ).toBeVisible()
+})
+
+test('salary XLSX includes edited workday counts', async ({ page }) => {
+  await page.goto('/salary')
+  await page.getByRole('button', { name: 'Показать предпросмотр таблицы' }).click()
+  await page
+    .getByRole('button', {
+      name: 'Изменить количество рабочих дней для 1 — 15 в января 2026',
+    })
+    .click()
+  await page.getByRole('spinbutton', { name: 'Рабочие дни для 1 — 15' }).fill('0')
+
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Скачать таблицу' }).click()
+  const download = await downloadPromise
+  const path = await download.path()
+  expect(path).not.toBeNull()
+
+  const workbook = new ExcelJS.Workbook()
+  await workbook.xlsx.readFile(path!)
+  const monthly = workbook.getWorksheet('Помесячно')!
+
+  expect(monthly.getCell('C5').value).toBe(0)
+  expect(monthly.getCell('I5').value).toMatchObject({
+    formula: 'ROUND(87000*E5,0)',
+    result: 63800,
+  })
 })
 
 test('child deduction follows the selected child count', async ({ page }) => {
@@ -103,7 +131,7 @@ test('vacation starts without a preselected range and supports drag selection', 
   ).toHaveAttribute('aria-pressed', 'true')
 })
 
-test('FAQ starts collapsed and keeps its desktop columns separated', async ({
+test('FAQ starts with only the first item open and keeps its desktop columns separated', async ({
   page,
 }, testInfo) => {
   await page.goto('/')
@@ -116,12 +144,14 @@ test('FAQ starts collapsed and keeps its desktop columns separated', async ({
     await triggers.evaluateAll((elements) =>
       elements.map((element) => element.getAttribute('aria-expanded')),
     ),
-  ).toEqual(['false', 'false', 'false', 'false', 'false'])
-  await expect(contents.first()).toBeHidden()
-
-  await triggers.first().click()
+  ).toEqual(['true', 'false', 'false', 'false', 'false'])
   await expect(contents.first()).toBeVisible()
   await expect(contents.nth(1)).toBeHidden()
+
+  await triggers.first().click()
+  await expect(contents.first()).toBeHidden()
+  await triggers.nth(1).click()
+  await expect(contents.nth(1)).toBeVisible()
 
   if (testInfo.project.name === 'chromium') {
     const headingBox = await page
