@@ -255,7 +255,10 @@ function HowItWorks() {
       </h2>
       <ol className="mt-8 grid gap-8 md:mt-12 md:grid-cols-3 md:gap-8">
         {steps.map((s, i) => (
-          <li key={i} className="flex flex-col gap-4">
+          <li
+            key={i}
+            className="flex flex-col gap-4 md:items-center md:text-center"
+          >
             <span
               className="font-display text-[64px] font-bold leading-none tracking-tight text-primary/75 md:text-[96px]"
               aria-hidden
