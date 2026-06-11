@@ -88,3 +88,12 @@
 - **Solution**: Keep adjustment calculations in a shared pure module, lift
   adjustment state to the page, pass it explicitly to export generation, and
   verify the downloaded workbook in a browser test.
+
+### Vacation budget was treated as every recommendation's length
+- **Error**: Entering 18 vacation days produced five alternatives that each
+  consumed all 18 days instead of periods that could be combined through the
+  year.
+- **Cause**: The optimizer generated candidates for one fixed duration equal
+  to the annual budget and ranked total rest length.
+- **Solution**: Generate periods from 1 to 14 workdays and rank the off-days
+  attached outside the vacation span before leverage and cost.

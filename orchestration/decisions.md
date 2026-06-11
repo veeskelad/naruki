@@ -43,3 +43,11 @@ editable; dependent monthly and annual cells contain formulas with cached
 results. Tax settings and payment dates are exported as a documented snapshot.
 Structural formula checks and cached-value checks are mandatory because native
 Excel recalculation cannot be tested locally without LibreOffice.
+
+## 2026-06-11: Vacation recommendations are additive short periods
+
+The configured vacation-day count is an annual budget, not the duration of
+each recommendation. The optimizer returns stable, non-overlapping periods of
+1 to 14 workdays. Users add or remove complete recommendations and may edit
+individual workdays in the calendar; recommendation additions cannot exceed
+the budget.
