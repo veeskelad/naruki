@@ -16,6 +16,7 @@ export interface VacationOption {
   restStart: string
   restEnd: string
   restDays: number
+  attachedOffDays: number
   leverage: number
   financialScore: number
   explanation: string
@@ -78,6 +79,8 @@ function buildOption(
   const lastVac = vacationDates[vacationDates.length - 1]
   const { restStart, restEnd } = expandRest(firstVac, lastVac)
   const restDays = diffDays(restStart, restEnd) + 1
+  const attachedOffDays =
+    restDays - (diffDays(firstVac, lastVac) + 1)
   const monthCounts = new Map<number, number>()
   vacationDates.forEach((date) => {
     const month = parseIso(date).getMonth()
@@ -95,6 +98,7 @@ function buildOption(
     restStart,
     restEnd,
     restDays,
+    attachedOffDays,
     leverage: restDays / daysOff,
     financialScore,
     explanation: `Используете ${daysOff} ${vacationDaysWord(daysOff)}, а отдых длится ${restDays} ${calendarDaysWord(restDays)} благодаря соседним выходным и праздникам.`,
@@ -138,30 +142,50 @@ export function findBestVacations(
   let cursor = yearStart
   while (cursor <= yearEnd) {
     if (isWork(cursor)) {
-      const opt = buildOption(year, cursor, daysOff, financialScores)
-      if (opt) {
-        if (!withinMonth || isSameMonth(opt.startDate, opt.endDate)) {
-          candidates.push(opt)
+      const maxPeriodDays = Math.min(14, daysOff)
+      for (let periodDays = 1; periodDays <= maxPeriodDays; periodDays++) {
+        const opt = buildOption(year, cursor, periodDays, financialScores)
+        if (opt) {
+          if (!withinMonth || isSameMonth(opt.startDate, opt.endDate)) {
+            candidates.push(opt)
+          }
         }
       }
     }
     cursor = addDays(cursor, 1)
   }
-  const maxLeverage = Math.max(...candidates.map((candidate) => candidate.leverage), 1)
+  const maxAttachedOffDays = Math.max(
+    ...candidates.map((candidate) => candidate.attachedOffDays),
+    1,
+  )
+  const maxLeverage = Math.max(
+    ...candidates.map((candidate) => candidate.leverage),
+    1,
+  )
   candidates.sort((a, b) => {
     if (mode === 'max_rest') {
-      if (b.restDays !== a.restDays) return b.restDays - a.restDays
-      return b.leverage - a.leverage
+      if (b.attachedOffDays !== a.attachedOffDays) {
+        return b.attachedOffDays - a.attachedOffDays
+      }
+      if (b.leverage !== a.leverage) return b.leverage - a.leverage
+      if (a.vacationDays !== b.vacationDays) {
+        return a.vacationDays - b.vacationDays
+      }
+      return a.startDate.localeCompare(b.startDate)
     }
     if (mode === 'max_financial') {
       if (b.financialScore !== a.financialScore) {
         return b.financialScore - a.financialScore
       }
+      if (b.attachedOffDays !== a.attachedOffDays) {
+        return b.attachedOffDays - a.attachedOffDays
+      }
       return b.leverage - a.leverage
     }
     const score = (candidate: VacationOption) =>
-      0.6 * (candidate.leverage / maxLeverage) +
-      0.4 * (candidate.financialScore / 10)
+      0.45 * (candidate.attachedOffDays / maxAttachedOffDays) +
+      0.3 * (candidate.leverage / maxLeverage) +
+      0.25 * (candidate.financialScore / 10)
     return score(b) - score(a)
   })
 

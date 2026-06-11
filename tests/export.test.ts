@@ -151,9 +151,26 @@ describe('vacation output formats', () => {
     expect(ics.endsWith('\r\n')).toBe(true)
   })
 
-  it('builds localized clipboard text', () => {
-    expect(buildVacationClipboardText(2026, dates, 2, 6)).toBe(
-      'Отпуск 2026: 4 мая 2026 г., 8 мая 2026 г. 2 дня отпуска → 6 дней отдыха.',
+  it('builds compact clipboard ranges joined through off-days', () => {
+    const clipboardDates = [
+      '2026-01-12',
+      '2026-01-13',
+      '2026-01-14',
+      '2026-01-15',
+      '2026-01-16',
+      '2026-01-19',
+      '2026-01-20',
+      '2026-02-02',
+      '2026-02-03',
+    ]
+    expect(buildVacationClipboardText(clipboardDates)).toBe(
+      '12–20 января 2026 г.; 2–3 февраля 2026 г.',
     )
+  })
+
+  it('keeps a missed workday as a separate clipboard period', () => {
+    expect(
+      buildVacationClipboardText(['2026-05-04', '2026-05-06']),
+    ).toBe('4 мая 2026 г.; 6 мая 2026 г.')
   })
 })

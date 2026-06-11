@@ -131,6 +131,54 @@ test('vacation starts without a preselected range and supports drag selection', 
   ).toHaveAttribute('aria-pressed', 'true')
 })
 
+test('vacation input supports replacement and recommendations add within budget', async ({
+  page,
+}) => {
+  await page.goto('/vacation')
+  const daysInput = page.getByRole('spinbutton', {
+    name: 'Количество дней отпуска',
+  })
+
+  await daysInput.fill('')
+  await expect(daysInput).toHaveValue('')
+  await daysInput.fill('10')
+  await expect(daysInput).toHaveValue('10')
+
+  const recommendations = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'Лучшие варианты' }) })
+  const buttons = recommendations.locator('button')
+
+  await buttons.nth(0).click()
+  await expect(page.getByText('из 10 дней отпуска')).toBeVisible()
+  await buttons.nth(1).click()
+  await expect(page.getByText('10', { exact: true }).first()).toBeVisible()
+  await expect(buttons.nth(2)).toBeDisabled()
+
+  await buttons.nth(0).click()
+  await expect(buttons.nth(3)).toBeEnabled()
+
+  await daysInput.fill('')
+  await daysInput.blur()
+  await expect(daysInput).toHaveValue('10')
+})
+
+test('vacation copy uses compact ranges', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write'])
+  await page.goto('/vacation')
+
+  const recommendations = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'Лучшие варианты' }) })
+  await recommendations.locator('button').first().click()
+  await page.getByRole('button', { name: 'Скопировать' }).click()
+
+  await expect(page.getByText('Периоды отпуска скопированы.')).toBeVisible()
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(
+    '12–16 января 2026 г.',
+  )
+})
+
 test('FAQ starts with only the first item open and keeps its desktop columns separated', async ({
   page,
 }, testInfo) => {

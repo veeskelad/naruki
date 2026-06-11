@@ -1,4 +1,5 @@
-import { addDays, parseIso } from '@/lib/calendar'
+import { addDays, isOffDay, parseIso } from '@/lib/calendar'
+import { MONTH_NAMES_RU_GENITIVE } from '@/lib/calendar/types'
 import { downloadText } from './download'
 
 const CRLF = '\r\n'
@@ -80,31 +81,60 @@ export function buildVacationCsv(dates: Iterable<string>): string {
     .join(CRLF)}${CRLF}`
 }
 
-export function buildVacationClipboardText(
-  year: number,
-  dates: Iterable<string>,
-  vacationDays: number,
-  totalRestDays: number,
-): string {
-  const formatter = new Intl.DateTimeFormat('ru-RU', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  })
-  const localizedDates = uniqueSortedDates(dates).map((iso) =>
-    formatter.format(parseIso(iso)),
-  )
-  const datesText = localizedDates.join(', ').replace(/\.$/, '')
-  return `Отпуск ${year}: ${datesText}. ${vacationDays} ${pluralDays(vacationDays)} отпуска → ${totalRestDays} ${pluralDays(totalRestDays)} отдыха.`
+export function buildVacationClipboardText(dates: Iterable<string>): string {
+  return groupVacationPeriods(dates)
+    .map(({ start, end }) => formatPeriod(start, end))
+    .join('; ')
 }
 
-function pluralDays(value: number): string {
-  const mod100 = value % 100
-  const mod10 = value % 10
-  if (mod100 >= 11 && mod100 <= 14) return 'дней'
-  if (mod10 === 1) return 'день'
-  if (mod10 >= 2 && mod10 <= 4) return 'дня'
-  return 'дней'
+function groupVacationPeriods(
+  dates: Iterable<string>,
+): Array<{ start: string; end: string }> {
+  const sorted = uniqueSortedDates(dates)
+  if (sorted.length === 0) return []
+
+  const periods: Array<{ start: string; end: string }> = []
+  let current = { start: sorted[0], end: sorted[0] }
+
+  for (const date of sorted.slice(1)) {
+    let cursor = addDays(current.end, 1)
+    while (cursor < date && isOff(cursor)) cursor = addDays(cursor, 1)
+    if (cursor === date) {
+      current.end = date
+    } else {
+      periods.push(current)
+      current = { start: date, end: date }
+    }
+  }
+  periods.push(current)
+  return periods
+}
+
+function isOff(iso: string): boolean {
+  const date = parseIso(iso)
+  return isOffDay(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function formatPeriod(startIso: string, endIso: string): string {
+  const start = parseIso(startIso)
+  const end = parseIso(endIso)
+  const startDay = start.getDate()
+  const endDay = end.getDate()
+  const startMonth = MONTH_NAMES_RU_GENITIVE[start.getMonth()]
+  const endMonth = MONTH_NAMES_RU_GENITIVE[end.getMonth()]
+  const startYear = start.getFullYear()
+  const endYear = end.getFullYear()
+
+  if (startIso === endIso) {
+    return `${startDay} ${startMonth} ${startYear} г.`
+  }
+  if (startYear === endYear && start.getMonth() === end.getMonth()) {
+    return `${startDay}–${endDay} ${endMonth} ${endYear} г.`
+  }
+  if (startYear === endYear) {
+    return `${startDay} ${startMonth} – ${endDay} ${endMonth} ${endYear} г.`
+  }
+  return `${startDay} ${startMonth} ${startYear} г. – ${endDay} ${endMonth} ${endYear} г.`
 }
 
 export function exportVacationIcs(year: number, dates: Set<string>): void {

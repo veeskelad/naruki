@@ -29,7 +29,6 @@ import {
   type AnalysisMode,
   type VacationOption,
 } from '@/lib/vacation/optimizer'
-import { buildMonthRatings } from '@/lib/vacation/financial'
 import {
   canSelectVacationDate,
   restBreakdown,
@@ -46,6 +45,7 @@ const YEAR = 2026
 
 export function VacationPage() {
   const [days, setDays] = useState(7)
+  const [daysInput, setDaysInput] = useState('7')
   const [mode, setMode] = useState<AnalysisMode>('max_rest')
   const [withinMonth, setWithinMonth] = useState(false)
   const [detailMonth, setDetailMonth] = useState<number | null>(null)
@@ -72,10 +72,20 @@ export function VacationPage() {
     () => restBreakdown(selectedDates),
     [selectedDates],
   )
-  const ratings = useMemo(() => buildMonthRatings(YEAR), [])
-
   const chooseRecommendation = (option: VacationOption) => {
-    setCustomSelection(new Set(option.vacationDates))
+    setCustomSelection((current) => {
+      const next = new Set(current ?? selectedDates)
+      const fullySelected = option.vacationDates.every((date) => next.has(date))
+      if (fullySelected) {
+        option.vacationDates.forEach((date) => next.delete(date))
+        return next
+      }
+
+      const additions = option.vacationDates.filter((date) => !next.has(date))
+      if (next.size + additions.length > days) return next
+      additions.forEach((date) => next.add(date))
+      return next
+    })
     setDetailMonth(parseIso(option.startDate).getMonth())
   }
 
@@ -90,12 +100,7 @@ export function VacationPage() {
   }
 
   const copySelection = async () => {
-    const text = buildVacationClipboardText(
-      YEAR,
-      selectedDates,
-      breakdown.vacation,
-      breakdown.total,
-    )
+    const text = buildVacationClipboardText(selectedDates)
     try {
       await navigator.clipboard.writeText(text)
       setCopyStatus('success')
@@ -119,8 +124,11 @@ export function VacationPage() {
 
         <VacationToolbar
           days={days}
+          daysInput={daysInput}
+          setDaysInput={setDaysInput}
           setDays={(value) => {
             setDays(value)
+            setDaysInput(String(value))
             setCustomSelection(null)
           }}
           mode={mode}
@@ -164,12 +172,12 @@ export function VacationPage() {
             <Recommendations
               recommendations={recommendations}
               selectedDates={selectedDates}
+              budget={days}
               onSelect={chooseRecommendation}
             />
           </aside>
         </div>
 
-        <MonthRatings ratings={ratings} />
       </div>
 
       <VacationArticle />
@@ -180,6 +188,8 @@ export function VacationPage() {
 
 function VacationToolbar({
   days,
+  daysInput,
+  setDaysInput,
   setDays,
   mode,
   setMode,
@@ -187,6 +197,8 @@ function VacationToolbar({
   setWithinMonth,
 }: {
   days: number
+  daysInput: string
+  setDaysInput: (value: string) => void
   setDays: (value: number) => void
   mode: AnalysisMode
   setMode: (value: AnalysisMode) => void
@@ -221,11 +233,25 @@ function VacationToolbar({
               type="number"
               min={1}
               max={28}
-              value={days}
+              value={daysInput}
               inputMode="numeric"
-              onChange={(event) =>
-                setDays(Math.min(28, Math.max(1, Number(event.target.value))))
-              }
+              onChange={(event) => {
+                const value = event.target.value
+                setDaysInput(value)
+                if (/^\d+$/.test(value)) {
+                  const parsed = Number(value)
+                  if (parsed >= 1 && parsed <= 28) setDays(parsed)
+                }
+              }}
+              onBlur={() => {
+                if (
+                  !/^\d+$/.test(daysInput) ||
+                  Number(daysInput) < 1 ||
+                  Number(daysInput) > 28
+                ) {
+                  setDaysInput(String(days))
+                }
+              }}
               className="w-10 bg-transparent text-center font-semibold outline-none"
               aria-label="Количество дней отпуска"
             />
@@ -656,7 +682,7 @@ function SelectionCard({
             )}
           >
             {copyStatus === 'success'
-              ? 'Даты и итог отпуска скопированы.'
+              ? 'Периоды отпуска скопированы.'
               : copyStatus === 'error'
                 ? 'Не удалось скопировать. Разрешите доступ к буферу обмена.'
                 : ''}
@@ -699,10 +725,12 @@ function Stat({
 function Recommendations({
   recommendations,
   selectedDates,
+  budget,
   onSelect,
 }: {
   recommendations: VacationOption[]
   selectedDates: Set<string>
+  budget: number
   onSelect: (option: VacationOption) => void
 }) {
   return (
@@ -718,15 +746,22 @@ function Recommendations({
       </p>
       <ol className="mt-4 space-y-2">
         {recommendations.map((option, index) => {
-          const active =
-            option.vacationDates.length === selectedDates.size &&
-            option.vacationDates.every((date) => selectedDates.has(date))
+          const active = option.vacationDates.every((date) =>
+            selectedDates.has(date),
+          )
+          const additionCost = option.vacationDates.filter(
+            (date) => !selectedDates.has(date),
+          ).length
+          const unavailable =
+            !active && selectedDates.size + additionCost > budget
+          const missingDays = selectedDates.size + additionCost - budget
           const topChoice = option.isTopChoice === true
           return (
             <li key={option.startDate}>
               <button
                 type="button"
                 onClick={() => onSelect(option)}
+                disabled={unavailable}
                 className={cn(
                   'flex w-full gap-3 rounded-2xl border p-3 text-left transition',
                   active
@@ -734,6 +769,8 @@ function Recommendations({
                     : topChoice
                       ? 'border-emerald-200 bg-emerald-50/70'
                       : 'border-border hover:border-primary/30',
+                  unavailable &&
+                    'cursor-not-allowed border-border bg-muted/30 opacity-60',
                 )}
               >
                 <span
@@ -760,51 +797,17 @@ function Recommendations({
                     Эффективность {option.leverage.toFixed(2).replace('.', ',')}
                     {' · '}деньги {option.financialScore}/10
                   </span>
+                  {unavailable && (
+                    <span className="mt-1 block text-xs font-medium text-rose-700">
+                      Не хватает {missingDays} {pluralDaysShort(missingDays)}
+                    </span>
+                  )}
                 </span>
               </button>
             </li>
           )
         })}
       </ol>
-    </section>
-  )
-}
-
-function MonthRatings({
-  ratings,
-}: {
-  ratings: ReturnType<typeof buildMonthRatings>
-}) {
-  return (
-    <section className="mt-10">
-      <h2 className="font-display text-2xl font-bold tracking-tight">
-        Финансовый рейтинг месяцев
-      </h2>
-      <p className="mt-2 max-w-3xl text-sm leading-relaxed text-muted-foreground">
-        Чем больше рабочих дней в месяце, тем меньше один день отпуска обычно
-        влияет на сумму зарплаты за этот месяц.
-      </p>
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {ratings.map((rating) => (
-          <article
-            key={rating.month}
-            className="rounded-[18px] border border-border bg-card p-4"
-          >
-            <div className="flex items-baseline justify-between">
-              <h3 className="font-semibold">{MONTH_NAMES_RU[rating.month]}</h3>
-              <span className="font-display text-xl font-bold text-primary">
-                {rating.financialScore}/10
-              </span>
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {rating.workdays} рабочих дней
-            </p>
-            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
-              {rating.comment}
-            </p>
-          </article>
-        ))}
-      </div>
     </section>
   )
 }
@@ -843,9 +846,10 @@ function VacationArticle() {
         </h2>
         <div className="mt-6 space-y-4 text-[15px] leading-7 text-muted-foreground">
           <p>
-            Для длинного отдыха сервис перебирает каждый рабочий день 2026
-            года как возможное начало, набирает нужное число рабочих дней и
-            расширяет период соседними выходными, праздниками и переносами.
+            Сервис перебирает короткие периоды от одного до четырнадцати
+            рабочих дней и ищет те, к которым присоединяется больше выходных,
+            праздников и переносов. Несколько вариантов можно добавить в общий
+            план отпуска на год.
           </p>
           <p>
             Режим «Больше денег» предпочитает месяцы с большим числом рабочих
@@ -871,6 +875,14 @@ function formatRange(start: string, end: string): string {
     month: 'long',
   })
   return `${date.format(parseIso(start))} — ${date.format(parseIso(end))}`
+}
+
+function pluralDaysShort(value: number): string {
+  const mod100 = value % 100
+  const mod10 = value % 10
+  if (mod100 >= 11 && mod100 <= 14) return 'дней'
+  if (mod10 === 1) return 'дня'
+  return 'дней'
 }
 
 function kindLabel(kind: string): string {
