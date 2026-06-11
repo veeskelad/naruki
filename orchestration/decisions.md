@@ -34,3 +34,12 @@ The salary schedule table preview collapses with inline `max-height` and
 `opacity` on its wrapper rather than a grid row animation. Table content
 resisted grid collapsing in practice, and explicit clipping is more reliable
 for this section.
+
+## 2026-06-11: XLSX is an editable report, not a second tax engine
+
+The salary workbook uses the same shared monthly adjustment model as the
+browser. In the TK RF sheet, only first-half and second-half workday counts are
+editable; dependent monthly and annual cells contain formulas with cached
+results. Tax settings and payment dates are exported as a documented snapshot.
+Structural formula checks and cached-value checks are mandatory because native
+Excel recalculation cannot be tested locally without LibreOffice.

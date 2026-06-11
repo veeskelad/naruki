@@ -79,3 +79,12 @@
 - **Solution**: Verify every migrated section against both the latest archive
   screenshot and its source component; preserve presentation while routing
   calculations through the production domain modules.
+
+### Export ignored edits made in the schedule preview
+- **Error**: Workday values changed in the salary table were not reflected in
+  the downloaded XLSX workbook.
+- **Cause**: The preview owned local adjustment state while the export rebuilt
+  its data from the unadjusted salary result.
+- **Solution**: Keep adjustment calculations in a shared pure module, lift
+  adjustment state to the page, pass it explicitly to export generation, and
+  verify the downloaded workbook in a browser test.
