@@ -77,6 +77,21 @@ test('vacation opens a month detail', async ({ page }) => {
   await expect(page.getByText(/Выбирать можно только рабочие дни/)).toBeVisible()
 })
 
+test('vacation returns from a bottom month to the calendar top', async ({
+  page,
+}) => {
+  await page.goto('/vacation')
+  await page.getByRole('button', { name: /Декабрь/ }).first().click()
+  await expect(page.getByRole('heading', { name: 'Декабрь 2026' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'К году' }).click()
+  const calendarHeading = page.getByRole('heading', {
+    name: 'Производственный календарь 2026',
+  })
+  await expect(calendarHeading).toBeVisible()
+  await expect(calendarHeading).toBeInViewport()
+})
+
 test('vacation starts without a preselected range and supports drag selection', async ({
   page,
 }) => {
@@ -93,7 +108,8 @@ test('vacation starts without a preselected range and supports drag selection', 
     .filter({ has: page.getByRole('heading', { name: 'Лучшие варианты' }) })
     .locator('button')
     .first()
-  await expect(topRecommendation).toHaveClass(/border-emerald-200/)
+  await expect(topRecommendation).toHaveAttribute('aria-pressed', 'false')
+  await expect(topRecommendation).not.toHaveClass(/bg-primary\/10/)
 
   await page.getByRole('button', { name: /Май/ }).first().click()
   const day4 = page.getByRole('button', { name: /^4 май:/ })
@@ -118,6 +134,7 @@ test('vacation starts without a preselected range and supports drag selection', 
     await page.mouse.move(
       box!.x + box!.width / 2,
       box!.y + box!.height / 2,
+      { steps: 4 },
     )
   }
   await page.mouse.up()
@@ -129,6 +146,38 @@ test('vacation starts without a preselected range and supports drag selection', 
   await expect(
     page.getByRole('button', { name: /^8 май:/ }),
   ).toHaveAttribute('aria-pressed', 'true')
+})
+
+test('vacation drag selects the full date range between endpoints', async ({
+  page,
+}) => {
+  await page.goto('/vacation')
+  await page.getByRole('button', { name: /Декабрь/ }).first().click()
+
+  const day16 = page.getByRole('button', { name: /^16 декабрь:/ })
+  const day23 = page.getByRole('button', { name: /^23 декабрь:/ })
+
+  await day16.scrollIntoViewIfNeeded()
+  const start = await day16.boundingBox()
+  const end = await day23.boundingBox()
+  expect(start).not.toBeNull()
+  expect(end).not.toBeNull()
+
+  await page.mouse.move(
+    start!.x + start!.width / 2,
+    start!.y + start!.height / 2,
+  )
+  await page.mouse.down()
+  await page.mouse.move(end!.x + end!.width / 2, end!.y + end!.height / 2, {
+    steps: 8,
+  })
+  await page.mouse.up()
+
+  for (const day of [16, 17, 18, 21, 22, 23]) {
+    await expect(
+      page.getByRole('button', { name: new RegExp(`^${day} декабрь:`) }),
+    ).toHaveAttribute('aria-pressed', 'true')
+  }
 })
 
 test('vacation input supports replacement and recommendations add within budget', async ({
@@ -151,11 +200,14 @@ test('vacation input supports replacement and recommendations add within budget'
 
   await buttons.nth(0).click()
   await expect(page.getByText('из 10 дней отпуска')).toBeVisible()
+  await expect(buttons.nth(0)).toHaveAttribute('aria-pressed', 'true')
   await buttons.nth(1).click()
   await expect(page.getByText('10', { exact: true }).first()).toBeVisible()
   await expect(buttons.nth(2)).toBeDisabled()
 
   await buttons.nth(0).click()
+  await expect(buttons.nth(0)).toHaveAttribute('aria-pressed', 'false')
+  await expect(buttons.nth(0)).not.toHaveClass(/bg-primary\/10/)
   await expect(buttons.nth(3)).toBeEnabled()
 
   await daysInput.fill('')

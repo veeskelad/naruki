@@ -21,7 +21,7 @@ import {
   MONTH_NAMES_RU,
   WEEKDAY_NAMES_SHORT,
 } from '@/lib/calendar/types'
-import { iterMonth, parseIso } from '@/lib/calendar'
+import { addDays, iterMonth, parseIso } from '@/lib/calendar'
 import {
   findBestVacations,
   restDaysLabel,
@@ -49,6 +49,7 @@ export function VacationPage() {
   const [mode, setMode] = useState<AnalysisMode>('max_rest')
   const [withinMonth, setWithinMonth] = useState(false)
   const [detailMonth, setDetailMonth] = useState<number | null>(null)
+  const calendarRef = useRef<HTMLDivElement | null>(null)
   const recommendations = useMemo(
     () =>
       findBestVacations(YEAR, days, {
@@ -99,6 +100,26 @@ export function VacationPage() {
     })
   }
 
+  const applyDateRange = (
+    startIso: string,
+    endIso: string,
+    action: 'select' | 'deselect',
+    baseSelection: Set<string>,
+  ) => {
+    const [start, end] =
+      startIso <= endIso ? [startIso, endIso] : [endIso, startIso]
+    const next = new Set(baseSelection)
+    let cursor = start
+    while (cursor <= end) {
+      if (canSelectVacationDate(cursor)) {
+        if (action === 'select') next.add(cursor)
+        else next.delete(cursor)
+      }
+      cursor = addDays(cursor, 1)
+    }
+    setCustomSelection(next)
+  }
+
   const copySelection = async () => {
     const text = buildVacationClipboardText(selectedDates)
     try {
@@ -107,6 +128,16 @@ export function VacationPage() {
     } catch {
       setCopyStatus('error')
     }
+  }
+
+  const closeMonthDetail = () => {
+    setDetailMonth(null)
+    requestAnimationFrame(() => {
+      calendarRef.current?.scrollIntoView({
+        block: 'start',
+        behavior: 'smooth',
+      })
+    })
   }
 
   return (
@@ -143,7 +174,10 @@ export function VacationPage() {
           }}
         />
 
-        <div className="mt-7 grid items-start gap-6 lg:grid-cols-[1.55fr_1fr]">
+        <div
+          ref={calendarRef}
+          className="mt-7 grid scroll-mt-4 items-start gap-6 lg:grid-cols-[1.55fr_1fr]"
+        >
           {detailMonth === null ? (
             <YearCalendar
               selectedDates={selectedDates}
@@ -155,7 +189,8 @@ export function VacationPage() {
               month={detailMonth}
               selectedDates={selectedDates}
               onToggleDate={toggleDate}
-              onClose={() => setDetailMonth(null)}
+              onApplyDateRange={applyDateRange}
+              onClose={closeMonthDetail}
               onMonthChange={setDetailMonth}
             />
           )}
@@ -330,7 +365,7 @@ function YearCalendar({
         </div>
         <Legend />
       </div>
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-6 grid auto-rows-fr gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {MONTH_NAMES_RU.map((name, month) => (
           <MiniMonth
             key={name}
@@ -361,11 +396,12 @@ function MiniMonth({
     ...Array.from({ length: days[0]?.dow ?? 0 }, () => null),
     ...days,
   ]
+  while (cells.length < 42) cells.push(null)
   return (
     <button
       type="button"
       onClick={onClick}
-      className="rounded-2xl border border-border p-3 text-left transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      className="flex h-full flex-col rounded-2xl border border-border p-3 text-left transition hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
     >
       <span className="font-semibold">{MONTH_NAMES_RU[month]}</span>
       <span className="mt-3 grid grid-cols-7 gap-1 text-center text-[9px] text-muted-foreground">
@@ -384,7 +420,7 @@ function MiniMonth({
               recommended={recommendationDates.has(day.date)}
             />
           ) : (
-            <span key={`empty-${index}`} />
+            <span key={`empty-${index}`} className="aspect-square" />
           ),
         )}
       </span>
@@ -424,12 +460,19 @@ function MonthDetail({
   month,
   selectedDates,
   onToggleDate,
+  onApplyDateRange,
   onClose,
   onMonthChange,
 }: {
   month: number
   selectedDates: Set<string>
   onToggleDate: (iso: string) => void
+  onApplyDateRange: (
+    startIso: string,
+    endIso: string,
+    action: 'select' | 'deselect',
+    baseSelection: Set<string>,
+  ) => void
   onClose: () => void
   onMonthChange: (month: number) => void
 }) {
@@ -441,6 +484,8 @@ function MonthDetail({
   while (cells.length < 42) cells.push(null)
   const [dragMode, setDragMode] = useState<'select' | 'deselect' | null>(null)
   const dragModeRef = useRef<'select' | 'deselect' | null>(null)
+  const dragAnchorRef = useRef<string | null>(null)
+  const dragBaseSelectionRef = useRef<Set<string> | null>(null)
 
   useEffect(() => {
     dragModeRef.current = dragMode
@@ -450,6 +495,8 @@ function MonthDetail({
     if (!dragMode) return
     const clearDrag = () => {
       dragModeRef.current = null
+      dragAnchorRef.current = null
+      dragBaseSelectionRef.current = null
       setDragMode(null)
     }
     window.addEventListener('pointerup', clearDrag)
@@ -462,11 +509,10 @@ function MonthDetail({
 
   const applyDrag = (iso: string) => {
     const mode = dragModeRef.current
-    if (!mode) return
-    const selected = selectedDates.has(iso)
-    if ((mode === 'select' && !selected) || (mode === 'deselect' && selected)) {
-      onToggleDate(iso)
-    }
+    const anchor = dragAnchorRef.current
+    const baseSelection = dragBaseSelectionRef.current
+    if (!mode || anchor === null || baseSelection === null) return
+    onApplyDateRange(anchor, iso, mode, baseSelection)
   }
 
   return (
@@ -532,16 +578,27 @@ function MonthDetail({
                   const shouldSelect = !selectedDates.has(day.date)
                   const nextMode = shouldSelect ? 'select' : 'deselect'
                   dragModeRef.current = nextMode
+                  dragAnchorRef.current = day.date
+                  dragBaseSelectionRef.current = new Set(selectedDates)
                   setDragMode(nextMode)
-                  onToggleDate(day.date)
+                  onApplyDateRange(
+                    day.date,
+                    day.date,
+                    nextMode,
+                    dragBaseSelectionRef.current,
+                  )
                 }}
                 onPointerEnter={() => applyDrag(day.date)}
                 onPointerUp={() => {
                   dragModeRef.current = null
+                  dragAnchorRef.current = null
+                  dragBaseSelectionRef.current = null
                   setDragMode(null)
                 }}
                 onPointerCancel={() => {
                   dragModeRef.current = null
+                  dragAnchorRef.current = null
+                  dragBaseSelectionRef.current = null
                   setDragMode(null)
                 }}
                 onClick={(event) => {
@@ -755,20 +812,18 @@ function Recommendations({
           const unavailable =
             !active && selectedDates.size + additionCost > budget
           const missingDays = selectedDates.size + additionCost - budget
-          const topChoice = option.isTopChoice === true
           return (
             <li key={option.startDate}>
               <button
                 type="button"
                 onClick={() => onSelect(option)}
                 disabled={unavailable}
+                aria-pressed={active}
                 className={cn(
                   'flex w-full gap-3 rounded-2xl border p-3 text-left transition',
                   active
                     ? 'border-primary/40 bg-primary/10'
-                    : topChoice
-                      ? 'border-emerald-200 bg-emerald-50/70'
-                      : 'border-border hover:border-primary/30',
+                    : 'border-border hover:border-primary/30',
                   unavailable &&
                     'cursor-not-allowed border-border bg-muted/30 opacity-60',
                 )}
@@ -778,9 +833,7 @@ function Recommendations({
                     'grid size-7 shrink-0 place-items-center rounded-full text-xs font-semibold transition-all duration-200',
                     active
                       ? 'bg-primary text-primary-foreground'
-                      : topChoice
-                        ? 'bg-emerald-600 text-white'
-                        : 'bg-muted text-muted-foreground',
+                      : 'bg-muted text-muted-foreground',
                   )}
                 >
                   {active ? <Check className="size-3.5" /> : index + 1}
