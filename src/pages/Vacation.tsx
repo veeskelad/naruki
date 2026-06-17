@@ -50,6 +50,7 @@ export function VacationPage() {
   const [withinMonth, setWithinMonth] = useState(false)
   const [detailMonth, setDetailMonth] = useState<number | null>(null)
   const calendarRef = useRef<HTMLDivElement | null>(null)
+  const shouldScrollCalendarRef = useRef(false)
   const recommendations = useMemo(
     () =>
       findBestVacations(YEAR, days, {
@@ -87,7 +88,7 @@ export function VacationPage() {
       additions.forEach((date) => next.add(date))
       return next
     })
-    setDetailMonth(parseIso(option.startDate).getMonth())
+    openMonthDetail(parseIso(option.startDate).getMonth())
   }
 
   const toggleDate = (iso: string) => {
@@ -130,14 +131,27 @@ export function VacationPage() {
     }
   }
 
-  const closeMonthDetail = () => {
-    setDetailMonth(null)
-    requestAnimationFrame(() => {
-      calendarRef.current?.scrollIntoView({
-        block: 'start',
-        behavior: 'smooth',
-      })
+  useEffect(() => {
+    if (!shouldScrollCalendarRef.current) return
+    shouldScrollCalendarRef.current = false
+    calendarRef.current?.scrollIntoView({
+      block: 'start',
+      behavior: 'smooth',
     })
+  }, [detailMonth])
+
+  const scrollCalendarAfterRender = () => {
+    shouldScrollCalendarRef.current = true
+  }
+
+  const openMonthDetail = (month: number) => {
+    scrollCalendarAfterRender()
+    setDetailMonth(month)
+  }
+
+  const closeMonthDetail = () => {
+    scrollCalendarAfterRender()
+    setDetailMonth(null)
   }
 
   return (
@@ -182,7 +196,7 @@ export function VacationPage() {
             <YearCalendar
               selectedDates={selectedDates}
               recommendations={recommendations}
-              onOpenMonth={setDetailMonth}
+              onOpenMonth={openMonthDetail}
             />
           ) : (
             <MonthDetail

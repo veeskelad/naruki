@@ -82,7 +82,9 @@ test('vacation returns from a bottom month to the calendar top', async ({
 }) => {
   await page.goto('/vacation')
   await page.getByRole('button', { name: /Декабрь/ }).first().click()
-  await expect(page.getByRole('heading', { name: 'Декабрь 2026' })).toBeVisible()
+  const monthHeading = page.getByRole('heading', { name: 'Декабрь 2026' })
+  await expect(monthHeading).toBeVisible()
+  await expect(monthHeading).toBeInViewport()
 
   await page.getByRole('button', { name: 'К году' }).click()
   const calendarHeading = page.getByRole('heading', {
